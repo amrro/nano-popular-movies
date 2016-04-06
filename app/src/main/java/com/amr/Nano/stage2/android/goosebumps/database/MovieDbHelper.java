@@ -41,14 +41,7 @@ public class MovieDbHelper extends SQLiteOpenHelper
                 + MovieEntry.COL_VOTE_AVERAGE + " REAL, "
                 + MovieEntry.COL_IS_FAVORITE + " INTEGER);";
 
-        final String CREATE_GENERES_TABLE = "CREATE TABLE " + GenresEntry.TABLE_NAME + "("
-                + GenresEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + GenresEntry.GENRE_ID + " INTEGER NOT NULL, "
-                + GenresEntry.GENERE_NAME + " TEXT NOT NULL);";
-
-
         db.execSQL(CREATE_MOVIE_TABLE);
-        db.execSQL(CREATE_GENERES_TABLE);
     }
 
     @Override
@@ -58,7 +51,6 @@ public class MovieDbHelper extends SQLiteOpenHelper
         + oldVersion + "to " + newVersion);
 
         db.execSQL("DROP TABLE IF EXISTS " + MovieEntry.TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + GenresEntry.TABLE_NAME);
         onCreate(db);
     }
 }

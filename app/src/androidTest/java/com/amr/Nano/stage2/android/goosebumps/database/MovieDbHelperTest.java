@@ -25,7 +25,6 @@ public class MovieDbHelperTest extends AndroidTestCase
     {
         final HashSet<String> tableNameHashSet = new HashSet<String>();
         tableNameHashSet.add(MovieContract.MovieEntry.TABLE_NAME);
-        tableNameHashSet.add(MovieContract.GenresEntry.TABLE_NAME);
         mContext.deleteDatabase(MovieDbHelper.DATABASE_NAME);
 
         // is database open?

@@ -43,21 +43,4 @@ public class TestUtilities extends AndroidTestCase
 
         return rowId;
     }
-
-
-    public void insertGenresValues(Context context)
-    {
-        SQLiteDatabase db = new MovieDbHelper(context).getWritableDatabase();
-        ContentValues values = new ContentValues();
-
-        values.put(MovieContract.GenresEntry.GENERE_NAME, "Action");
-        values.put(MovieContract.GenresEntry.GENRE_ID, 28);
-        db.insert(MovieContract.GenresEntry.TABLE_NAME, null, values);
-        values.clear();
-
-        values.put(MovieContract.GenresEntry.GENERE_NAME, "Adventure");
-        values.put(MovieContract.GenresEntry.GENRE_ID, 12);
-        long rowId = db.insert(MovieContract.GenresEntry.TABLE_NAME, null, values);
-        assertTrue("Error: Failure to insert North Pole Location Values", rowId != -1);
-    }
 }

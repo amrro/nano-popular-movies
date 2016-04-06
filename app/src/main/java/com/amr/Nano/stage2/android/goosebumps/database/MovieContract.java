@@ -16,26 +16,6 @@ public class MovieContract
 
 
 
-    /*
-     * the table to hold different types of genres ids and names.
-     * A movie has many types of genres ids.
-     * found here: https://api.themoviedb.org/3/genre/movie/list?api_key=API_KEY_HERE
-     */
-    public static class GenresEntry implements BaseColumns
-    {
-        public static final String PATH_LOCATION = "GENRES";
-        public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(PATH_LOCATION).build();
-
-        public static final String CONTENT_TYPE =
-                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_LOCATION;
-
-        public static final String CONTENT_ITEM_TYPE =
-                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_LOCATION;
-
-        public static final String TABLE_NAME   = "GENERE_IDS_TABLE";
-        public static final String GENRE_ID     = "GENRE_ID";
-        public static final String GENERE_NAME  = "GENRE_NAME";
-    }
 
 
 
