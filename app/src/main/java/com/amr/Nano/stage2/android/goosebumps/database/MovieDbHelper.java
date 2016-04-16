@@ -39,7 +39,10 @@ public class MovieDbHelper extends SQLiteOpenHelper
                 + MovieEntry.COL_POPULARITY + " REAL, "
                 + MovieEntry.COL_VOTE_COUNT + " INTEGER, "
                 + MovieEntry.COL_VOTE_AVERAGE + " REAL, "
-                + MovieEntry.COL_IS_FAVORITE + " INTEGER);";
+                + MovieEntry.COL_IS_FAVORITE + " INTEGER" + ");"
+                + "UNIQUE(" + MovieEntry.COL_MOVIE_ID + ", " + MovieEntry.COL_ORIGINAL_TITLE + ") ON CONFLICT REPLACE";
+
+//                "UNIQUE (" + MovieEntry.COL_MOVIE_ID + "," + MovieEntry.COL_ORIGINAL_TITLE + ") ON CONFLICT REPLACE)";
 
         db.execSQL(CREATE_MOVIE_TABLE);
     }

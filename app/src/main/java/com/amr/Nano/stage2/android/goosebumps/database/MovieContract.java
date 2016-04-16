@@ -38,21 +38,21 @@ public class MovieContract
                 CONTENT_AUTHORITY + "/" + PATH_LOCATION;
 
 
-        // movie table columns:
-        public static final String TABLE_NAME           = "MOVIE_TABLE";
-        public static final String COL_POSTER_URL       = "POSTER_URL";
-        public static final String COL_IS_ADULT         = "IS_ADULT";
-        public static final String COL_OVERVIEW         = "MOVIE_OVERVIEW";
-        public static final String COL_RELEASE_DATE     = "RELEASE_DATE";
-        public static final String COL_MOVIE_ID         = "MOVIE_ID";
-        public static final String COL_GENRE_IDS        = "GENRES_IDS";
-        public static final String COL_ORIGINAL_TITLE   = "ID";
-        public static final String COL_ORIGINAL_LANG    = "ORIGINAL_TITLE";
-        public static final String COL_BACKDROP_URL     = "BACKDROP_URL";
-        public static final String COL_POPULARITY       = "MOVIE_POPULARITY";
-        public static final String COL_VOTE_COUNT       = "VOTE_COUNT";
-        public static final String COL_VOTE_AVERAGE     = "VOTE_AVERAGE";
-        public static final String COL_IS_FAVORITE      = "IS_FAVORITE_MOVIE";
+        // movie  columns:
+        public static final String TABLE_NAME           = "movie_table";
+        public static final String COL_POSTER_URL       = "poster_path";
+        public static final String COL_IS_ADULT         = "adult";
+        public static final String COL_OVERVIEW         = "overview";
+        public static final String COL_RELEASE_DATE     = "release_date";
+        public static final String COL_MOVIE_ID         = "id";
+        public static final String COL_GENRE_IDS        = "genres_ids";
+        public static final String COL_ORIGINAL_TITLE   = "id";
+        public static final String COL_ORIGINAL_LANG    = "original_title";
+        public static final String COL_BACKDROP_URL     = "backdrop_path";
+        public static final String COL_POPULARITY       = "popularity";
+        public static final String COL_VOTE_COUNT       = "vote_count";
+        public static final String COL_VOTE_AVERAGE     = "vote_average";
+        public static final String COL_IS_FAVORITE      = "is_favorite_movie";
 
 
         public static Uri buildMovieUri (long id)
