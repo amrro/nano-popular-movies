@@ -1,4 +1,4 @@
-package com.amr.Nano.stage2.android.goosebumps.ui;
+package com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter;
 
 /**
  * Created by amro on 4/16/16.

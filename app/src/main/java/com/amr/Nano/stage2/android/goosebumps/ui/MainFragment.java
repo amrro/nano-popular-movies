@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter.Movie;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter.MoviesAdapter;
 
 import org.json.JSONArray;
