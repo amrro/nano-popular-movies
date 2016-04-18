@@ -97,13 +97,12 @@ public class MainFragment extends Fragment
 
             try
             {
-                final String QUERY_KEY = "api_key";
 
                 Uri uriBuilder = Uri.parse(Movie.API_BASE_URL)
                         .buildUpon()
                         .appendPath("movie")
                         .appendPath(params[0])
-                        .appendQueryParameter(QUERY_KEY, Movie.API_KEY)
+                        .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
                         .build();
 
 

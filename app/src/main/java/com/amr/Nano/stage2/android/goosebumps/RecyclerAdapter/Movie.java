@@ -35,7 +35,7 @@ public class Movie
 
     public static final String API_BASE_URL = "https://api.themoviedb.org/3";
     public static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/";
-
+    public static final String API_kEY_QUERY = "api_key";
     public static final String API_KEY = "f5d2da75e7729eee412a43da5f542a9c";
 
     public static final String POSTER_URL       = "poster_path";
@@ -44,12 +44,14 @@ public class Movie
     public static final String RELEASE_DATE     = "release_date";
     public static final String MOVIE_ID         = "id";
     public static final String GENRE_IDS        = "genres_ids";
-    public static final String ORIGINAL_TITLE   = "id";
+    public static final String ORIGINAL_TITLE   = "original_title";
     public static final String ORIGINAL_LANG    = "original_title";
     public static final String BACKDROP_URL     = "backdrop_path";
     public static final String POPULARITY       = "popularity";
     public static final String VOTE_COUNT       = "vote_count";
     public static final String VOTE_AVERAGE     = "vote_average";
+
+    public static final String RUNTIME          = "runtime";
 
 
     public static final String[] POSTER_SIZES = new String[]
@@ -61,7 +63,6 @@ public class Movie
                     "w780",
                     "original"
             };
-
 
     public static final String[] BACKDROP_SIZES = new String[]
             {
