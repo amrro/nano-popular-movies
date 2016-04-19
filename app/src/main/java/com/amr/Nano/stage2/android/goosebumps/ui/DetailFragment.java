@@ -7,6 +7,8 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,7 +19,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
-import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter.Movie;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
 import com.bumptech.glide.Glide;
 
 import org.json.JSONException;
@@ -42,13 +44,19 @@ public class DetailFragment extends Fragment
 {
 
     private static final String TAG = DetailFragment.class.getSimpleName();
+    private static final int SPAN_COUNT = 1;
     private int movieID;
+
+    private RecyclerView.LayoutManager mLayoutManager;
 
     @Bind(R.id.collapsing_toolbar)
     CollapsingToolbarLayout mCollapsingToolbar;
 
     @Bind(R.id.toolbar)
     Toolbar mToolbar;
+
+    @Bind(R.id.recycler_view_reviews)
+    RecyclerView mReviewRecycler;
 
     // Linking views id to fields
     @Bind(R.id.backdrop_image_view)
@@ -99,6 +107,12 @@ public class DetailFragment extends Fragment
 
         movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
         Log.d(TAG, "::: Recieved Movie ID is: "  + movieID);
+
+        mReviewRecycler.setHasFixedSize(true);
+        mLayoutManager = new GridLayoutManager(getContext(), SPAN_COUNT);
+        mReviewRecycler.setLayoutManager(mLayoutManager);
+
+
 
         return rootView;
     }

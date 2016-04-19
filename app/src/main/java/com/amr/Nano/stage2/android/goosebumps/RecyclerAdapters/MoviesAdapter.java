@@ -1,4 +1,4 @@
-package com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter;
+package com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters;
 
 import android.content.Context;
 import android.content.Intent;

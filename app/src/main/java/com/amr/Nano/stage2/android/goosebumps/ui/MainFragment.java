@@ -13,8 +13,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
-import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter.Movie;
-import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapter.MoviesAdapter;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.MoviesAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -210,6 +210,24 @@ public class MainFragment extends Fragment
                 mMoviesAdapter.clear();
                 mMoviesAdapter.addAll(movies);
             }
+        }
+    }
+
+
+
+    class FetchReviewsTask extends AsyncTask<Void, Void, Void>
+    {
+        public final String TAG = FetchReviewsTask.class.getSimpleName();
+        @Override
+        protected void onPostExecute(Void aVoid)
+        {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params)
+        {
+            return null;
         }
     }
 }
