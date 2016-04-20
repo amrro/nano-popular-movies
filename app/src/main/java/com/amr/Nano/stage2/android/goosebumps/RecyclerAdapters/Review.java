@@ -5,26 +5,20 @@ package com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters;
  */
 public class Review
 {
-    private final String userName;
-    private final String userProfileImageURL;
-    private final String userReview;
+    private String userName;
+    private String userReview;
 
-    public Review(String userName, String userProfileImage, String userReview)
+    public Review(String userName, String userReview)
     {
         this.userName = userName;
-        this.userProfileImageURL = userProfileImage;
         this.userReview = userReview;
     }
+
 
 
     public String getUserName()
     {
         return userName;
-    }
-
-    public String getUserProfileImageURL()
-    {
-        return userProfileImageURL;
     }
 
     public String getUserReview()

@@ -67,6 +67,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
     public void addAll(Collection<? extends Movie> movies)
     {
         mMoviesSet.addAll(movies);
+        notifyDataSetChanged();
     }
 
     public class MovieHolder extends RecyclerView.ViewHolder

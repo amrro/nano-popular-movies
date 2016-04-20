@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
+
+
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
@@ -52,7 +54,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -64,7 +66,6 @@
                 android:background="#DDD"
                 android:elevation="4dp"
                 android:padding="12dp">
-
 
                 <ImageView
                     android:elevation="4dp"
@@ -150,7 +151,7 @@
             </RelativeLayout>
 
             <LinearLayout
-                android:id="@+id/movie_overview_section"
+                android:id="@+id/review_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/movie_info_relative"
@@ -161,7 +162,6 @@
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-
                     android:layout_marginTop="5dp"
                     android:src="@mipmap/ic_info_black_24dp"/>
 
@@ -179,12 +179,10 @@
 
 
             <LinearLayout
+                android:visibility="visible"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/movie_overview_section"
-                android:layout_marginLeft="@dimen/activity_vertical_margin"
-                android:layout_marginTop="32dp"
-                android:elevation="4dp"
+                android:layout_below="@id/review_title"
                 android:orientation="horizontal">
 
                 <ImageView
@@ -199,6 +197,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="32dp"
                     android:text="REVIEWS"
+                    android:layout_marginBottom="16dp"
                     android:textSize="18sp"/>
 
             </LinearLayout>
@@ -208,10 +207,10 @@
                 android:id="@+id/recycler_view_reviews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/movie_overview_section"/>
+                android:layout_below="@id/review_title"/>
 
 
-        </RelativeLayout>
+        </LinearLayout>
 
 
     </android.support.v4.widget.NestedScrollView>

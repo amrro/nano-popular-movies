@@ -1,13 +1,15 @@
 package com.amr.Nano.stage2.android.goosebumps.ui;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -20,8 +22,17 @@ import android.widget.TextView;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Review;
+import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.ReviewsAdapter;
+import com.amr.Nano.stage2.android.goosebumps.network.VolleySingleton;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.bumptech.glide.Glide;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,6 +42,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -45,18 +57,24 @@ public class DetailFragment extends Fragment
 
     private static final String TAG = DetailFragment.class.getSimpleName();
     private static final int SPAN_COUNT = 1;
-    private int movieID;
+    // boolean flag if(review total_results == 0) mIsReviews = false;
+    private boolean mIsReviews;
+    private String mYouTubeUrl;
 
+    private int movieID;
     private RecyclerView.LayoutManager mLayoutManager;
+    private ReviewsAdapter mReviewsAdapter;
+
+    private RequestQueue mRequestQueue;
+
+    @Bind(R.id.recycler_view_reviews)
+    RecyclerView mReviewRecycler;
 
     @Bind(R.id.collapsing_toolbar)
     CollapsingToolbarLayout mCollapsingToolbar;
 
     @Bind(R.id.toolbar)
     Toolbar mToolbar;
-
-    @Bind(R.id.recycler_view_reviews)
-    RecyclerView mReviewRecycler;
 
     // Linking views id to fields
     @Bind(R.id.backdrop_image_view)
@@ -108,15 +126,165 @@ public class DetailFragment extends Fragment
         movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
         Log.d(TAG, "::: Recieved Movie ID is: "  + movieID);
 
-        mReviewRecycler.setHasFixedSize(true);
-        mLayoutManager = new GridLayoutManager(getContext(), SPAN_COUNT);
+        mRequestQueue = VolleySingleton.getInstance().getRequestQueue();
+
+//        mReviewRecycler.setHasFixedSize(true);
+        mLayoutManager = new LinearLayoutManager(getContext());
         mReviewRecycler.setLayoutManager(mLayoutManager);
 
+        mReviewsAdapter = new ReviewsAdapter(getContext(), new ArrayList<Review>());
+        updateReviewsAdapter();
+        mReviewRecycler.setAdapter(mReviewsAdapter);
 
+        // called this method cuz I have to wait for a moment before tapping playFAB.
+        getYouTubeUrl();
+        mPlayFab.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View view)
+            {
+                Log.d(TAG, "movie id is : " + movieID);
+                // getting youtube url:
+                if (getYouTubeUrl() != null)
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeUrl())));
+                else
+                    Snackbar.make(view, "No trailer available.", Snackbar.LENGTH_LONG)
+                        .show();
+            }
+        });
 
         return rootView;
     }
 
+
+    private void updateReviewsAdapter()
+    {
+        Uri reviewsUri = Uri.parse(Movie.BASE_URL)
+                .buildUpon()
+                .appendPath("movie")
+                .appendPath(String.valueOf(movieID))
+                .appendPath("reviews")
+                .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
+                .build();
+
+        // working perfectly:
+//        Log.d("USER_PROFILE", "" + reviewsUri.toString());
+
+        JsonObjectRequest jsonReviewRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                reviewsUri.toString(),
+                null,
+                new Response.Listener<JSONObject>()
+                {
+                    @Override
+                    public void onResponse(JSONObject response)
+                    {
+                        ArrayList<Review> reviewsToAdapter = new ArrayList<>();
+
+                        try
+                        {
+                            if (!(Integer.parseInt(response.getString("total_results")) > 0))
+                            {
+                                Log.d("REVIEWS_COUNT", "THERE IS NO REVIEWS");
+                                mIsReviews = false;
+                                return;
+                            }
+
+                            JSONArray results = response.getJSONArray("results");
+                            for (int i = 0; i < results.length(); i++)
+                            {
+                                JSONObject review = results.getJSONObject(i);
+                                reviewsToAdapter.add(
+                                        new Review(
+                                                review.getString("author"),
+                                                review.getString("content")
+                                        )
+                                );
+                            }
+                            mReviewsAdapter.clear();
+                            mReviewsAdapter.addAll(reviewsToAdapter);
+                            mIsReviews = true;
+
+                        }
+                        catch (JSONException e)
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+
+                    }
+                }
+        );
+
+        mRequestQueue.add(jsonReviewRequest);
+    }
+
+
+    public String getYouTubeUrl()
+    {
+        final Uri YouTubeUri = Uri.parse(Movie.BASE_URL)
+                .buildUpon()
+                .appendPath("movie")
+                .appendPath(String.valueOf(movieID))
+                .appendPath("videos")
+                .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
+                .build();
+
+        Log.d(TAG, "youtube uri is: "+ YouTubeUri.toString());
+
+        JsonObjectRequest YouTube = new JsonObjectRequest(
+                Request.Method.GET,
+                YouTubeUri.toString(),
+                null,
+                new Response.Listener<JSONObject>()
+                {
+                    @Override
+                    public void onResponse(JSONObject response)
+                    {
+                        try
+                        {
+                            JSONArray results = response.getJSONArray("results");
+                            if (true)
+                            {
+                                mYouTubeUrl = results.getJSONObject(0).getString("key");
+                                /*
+                                mYouTubeUrl = Uri.parse("http://www.youtube.com/watch")
+                                        .buildUpon()
+                                        .appendQueryParameter("v", results.getJSONObject(0).getString("key"))
+                                        .build().toString();
+                                Log.d(TAG, "youtube link is: " + mYouTubeUrl);
+                                Log.d(TAG, "youtube key is: " + results.getJSONObject(0).getString("key"));
+                                */
+                            }
+                        }
+                        catch (JSONException e)
+                        {
+                            Log.d(TAG, "Failed to fetch Json results");
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+
+                    }
+                }
+        );
+
+        mRequestQueue.add(YouTube);
+        Log.d(TAG, "youtube link is : " + mYouTubeUrl);
+        return mYouTubeUrl;
+    }
 
     @Override
     public void onStart()
@@ -124,6 +292,23 @@ public class DetailFragment extends Fragment
         super.onStart();
         FetchMovieDataTask fetchTask = new FetchMovieDataTask();
         fetchTask.execute();
+        updateReviewsAdapter();
+    }
+
+    @Override
+    public void onStop()
+    {
+        super.onStop();
+        mRequestQueue.cancelAll(
+                new RequestQueue.RequestFilter()
+                {
+                    @Override
+                    public boolean apply(Request<?> request)
+                    {
+                        return true;
+                    }
+                }
+        );
     }
 
     class FetchMovieDataTask extends AsyncTask<Void, Void, Void>
@@ -139,8 +324,6 @@ public class DetailFragment extends Fragment
             {
                 JSONObject movieData = new JSONObject(movieJsonStr);
 //                getPosterURL(movieData.getString(Movie.BACKDROP_URL));
-
-                Log.d(TAG, "backdrop url is: " + getBackdropURL(movieData.getString(Movie.BACKDROP_URL)));
 
                 Glide
                     .with(getContext())
@@ -177,7 +360,7 @@ public class DetailFragment extends Fragment
             movieJsonStr = null;
             try
             {
-                Uri uriBuilder = Uri.parse(Movie.API_BASE_URL)
+                Uri uriBuilder = Uri.parse(Movie.BASE_URL)
                         .buildUpon()
                         .appendPath("movie")
                         .appendPath(String.valueOf(movieID))
@@ -186,8 +369,6 @@ public class DetailFragment extends Fragment
 
 
                 URL url = new URL(uriBuilder.toString());
-
-                Log.d(TAG, "movie url is " + String.valueOf(url));
 
                 httpsURLConnection = (HttpsURLConnection) url.openConnection();
                 httpsURLConnection.setRequestMethod("GET");

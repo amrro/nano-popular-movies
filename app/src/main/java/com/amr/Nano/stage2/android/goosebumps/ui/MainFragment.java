@@ -98,7 +98,7 @@ public class MainFragment extends Fragment
             try
             {
 
-                Uri uriBuilder = Uri.parse(Movie.API_BASE_URL)
+                Uri uriBuilder = Uri.parse(Movie.BASE_URL)
                         .buildUpon()
                         .appendPath("movie")
                         .appendPath(params[0])

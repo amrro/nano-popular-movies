@@ -5,11 +5,9 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
-import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,14 +42,8 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHo
     @Override
     public void onBindViewHolder(ReviewHolder holder, int position)
     {
-        Glide
-            .with(mContext)
-            .load(mReviewsSet.get(position).getUserProfileImageURL())
-            .into(holder.profileImage);
-
         holder.userName.setText(mReviewsSet.get(position).getUserName());
         holder.userReview.setText(mReviewsSet.get(position).getUserReview());
-
     }
 
     @Override
@@ -63,11 +55,13 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHo
     public void clear()
     {
         mReviewsSet.clear();
+        notifyDataSetChanged();
     }
 
     public void addAll(Collection<? extends Review> reviews)
     {
         mReviewsSet.addAll(reviews);
+        notifyDataSetChanged();
     }
 
 
@@ -80,9 +74,6 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewHo
 
         @Bind(R.id.user_review_text)
         TextView userReview;
-
-        @Bind(R.id.user_profile_image)
-        ImageView profileImage;
 
 
         public ReviewHolder(CardView cardView)
