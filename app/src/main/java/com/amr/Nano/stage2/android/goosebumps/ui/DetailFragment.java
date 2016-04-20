@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -164,9 +165,15 @@ public class DetailFragment extends Fragment
             @Override
             public void onClick(View view)
             {
+
+                ContentResolver resolver = getContext().getContentResolver();
+
+                /**
+                 * in case the movie is already in favorites:
+                 */
                 if (mPlayFab.isSelected())
                 {
-                    getContext().getContentResolver().delete(
+                    resolver.delete(
                             MovieContract.MovieEntry.CONTENT_URI,
                             MovieContract.MovieEntry.COL_MOVIE_ID + "=?",
                             new String[] {(String) mMovieValues.get(MovieContract.MovieEntry.COL_MOVIE_ID)}
@@ -175,18 +182,56 @@ public class DetailFragment extends Fragment
                     Snackbar.make(
                             view, "Deleting from your favorites.",
                             Snackbar.LENGTH_LONG)
+                            .setActionTextColor(Color.RED)
+                            .setAction("UNDO", new View.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(View v)
+                                {
+                                    getContext().getContentResolver().insert(
+                                            MovieContract.MovieEntry.CONTENT_URI,
+                                            mMovieValues
+                                    );
+                                    setPlayFab();
+                                }
+                            })
                             .show();
 
-                    mPlayFab.setSelected(false);
+                    /**
+                     * mPlayFab.setSelected(false) could be used
+                     * instead, I used setPlayFab() to make sure that the entry really deleted
+                     * Consequently, mPlayFab depends on the database.
+                     */
+
+                    setPlayFab();
                 }
+
+                /**
+                 * in case the movie is not in favorites
+                 */
                 else
                 {
-                    getContext().getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, mMovieValues);
+                    resolver.insert(MovieContract.MovieEntry.CONTENT_URI, mMovieValues);
+
                     Snackbar.make(
                             view, "Adding to your favorites.",
                             Snackbar.LENGTH_LONG)
+                            .setAction("UNDO", new View.OnClickListener()
+                            {
+                                @Override
+                                public void onClick(View v)
+                                {
+                                    getContext().getContentResolver().delete(
+                                            MovieContract.MovieEntry.CONTENT_URI,
+                                            MovieContract.MovieEntry.COL_MOVIE_ID + "=?",
+                                            new String[]{(String) mMovieValues.get(MovieContract.MovieEntry.COL_MOVIE_ID)}
+                                    );
+                                    setPlayFab();
+                                }
+                            })
+                            .setActionTextColor(Color.GREEN)
                             .show();
-                    mPlayFab.setSelected(true);
+                    setPlayFab();
                 }
                /*
                 Log.d(TAG, "movie id is : " + movieID);
@@ -202,7 +247,12 @@ public class DetailFragment extends Fragment
         return rootView;
     }
 
-    public void setPlayFab()
+
+    /***
+     * Helper method to set the selection state of the fab (.setSelected()) from (selector<></>)
+     * this method makes the the selection state depend on the database.
+     */
+    private void setPlayFab()
     {
         ContentResolver resolver = getContext().getContentResolver();
         Cursor cursor = resolver.query(
@@ -592,13 +642,11 @@ public class DetailFragment extends Fragment
                     MovieContract.MovieEntry.COL_VOTE_AVERAGE,
                     movieData.getDouble(MovieContract.MovieEntry.COL_VOTE_AVERAGE)
             );
-/*
+
             mMovieValues.put(
                     MovieContract.MovieEntry.COL_RUNTIME,
                     movieData.getInt(MovieContract.MovieEntry.COL_RUNTIME)
-            );*/
+            );
         }
-
-
     }
 }
