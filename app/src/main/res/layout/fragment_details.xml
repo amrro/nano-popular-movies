@@ -232,9 +232,9 @@
             android:id="@+id/play_fab"
             app:layout_anchor="@id/appbar"
             app:layout_anchorGravity="bottom|right|end"
-            android:src="@mipmap/ic_play_arrow_white_36dp"
+            style="@style/FavoriteButton"
             android:layout_margin="16dp"
-            android:scaleType="center"
+            android:scaleType="centerCrop"
             android:clickable="true"/>
 
 

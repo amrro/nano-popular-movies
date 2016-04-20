@@ -46,13 +46,14 @@ public class MovieContract
         public static final String COL_RELEASE_DATE     = "release_date";
         public static final String COL_MOVIE_ID         = "id";
         public static final String COL_GENRE_IDS        = "genres_ids";
-        public static final String COL_ORIGINAL_TITLE   = "id";
-        public static final String COL_ORIGINAL_LANG    = "original_title";
+        public static final String COL_ORIGINAL_TITLE   = "original_title";
+        public static final String COL_ORIGINAL_LANG    = "original_language";
         public static final String COL_BACKDROP_URL     = "backdrop_path";
         public static final String COL_POPULARITY       = "popularity";
         public static final String COL_VOTE_COUNT       = "vote_count";
         public static final String COL_VOTE_AVERAGE     = "vote_average";
         public static final String COL_IS_FAVORITE      = "is_favorite_movie";
+        public static final String COL_RUNTIME = "runtime";
 
 
         public static Uri buildMovieUri (long id)

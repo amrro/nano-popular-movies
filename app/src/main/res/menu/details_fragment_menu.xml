@@ -9,4 +9,11 @@
         app:elevation="4dp"
         android:actionProviderClass="android.support.v7.widget.ShareActionProvider"
         android:title="@string/action_share"/>
+<!--
+    <item
+        android:id="@+id/action_favorite"
+        app:showAsAction="always"
+        android:actionMenuTextAppearance="@style/FavoriteButton"
+        android:title="@string/action_favorite"/>
+    -->
 </menu>

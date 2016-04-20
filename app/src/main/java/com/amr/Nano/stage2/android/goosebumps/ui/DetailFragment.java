@@ -1,6 +1,9 @@
 package com.amr.Nano.stage2.android.goosebumps.ui;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -29,6 +32,7 @@ import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Review;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.ReviewsAdapter;
+import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 import com.amr.Nano.stage2.android.goosebumps.network.VolleySingleton;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -66,6 +70,8 @@ public class DetailFragment extends Fragment
     private boolean mIsReviews;
     private String mYouTubeKey;
     private ShareActionProvider mShareActionProvider;
+
+    private ContentValues mMovieValues;
 
     private int movieID;
     private RecyclerView.LayoutManager mLayoutManager;
@@ -136,7 +142,7 @@ public class DetailFragment extends Fragment
         ((DetailActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
-        Log.d(TAG, "::: Recieved Movie ID is: "  + movieID);
+        Log.d(TAG, "::: Recieved Movie ID is: " + movieID);
 
         mRequestQueue = VolleySingleton.getInstance().getRequestQueue();
 
@@ -148,6 +154,9 @@ public class DetailFragment extends Fragment
         updateReviewsAdapter();
         mReviewRecycler.setAdapter(mReviewsAdapter);
 
+
+        setPlayFab();
+
         // called this method cuz I have to wait for a moment before tapping playFAB.
         getYouTubeKey();
         mPlayFab.setOnClickListener(new View.OnClickListener()
@@ -155,17 +164,71 @@ public class DetailFragment extends Fragment
             @Override
             public void onClick(View view)
             {
+                if (mPlayFab.isSelected())
+                {
+                    getContext().getContentResolver().delete(
+                            MovieContract.MovieEntry.CONTENT_URI,
+                            MovieContract.MovieEntry.COL_MOVIE_ID + "=?",
+                            new String[] {(String) mMovieValues.get(MovieContract.MovieEntry.COL_MOVIE_ID)}
+                    );
+
+                    Snackbar.make(
+                            view, "Deleting from your favorites.",
+                            Snackbar.LENGTH_LONG)
+                            .show();
+
+                    mPlayFab.setSelected(false);
+                }
+                else
+                {
+                    getContext().getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, mMovieValues);
+                    Snackbar.make(
+                            view, "Adding to your favorites.",
+                            Snackbar.LENGTH_LONG)
+                            .show();
+                    mPlayFab.setSelected(true);
+                }
+               /*
                 Log.d(TAG, "movie id is : " + movieID);
                 // getting youtube url:
                 if (getYouTubeKey() != null)
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeKey())));
                 else
                     Snackbar.make(view, "No trailer available.", Snackbar.LENGTH_LONG)
-                        .show();
+                        .show();*/
             }
         });
 
         return rootView;
+    }
+
+    public void setPlayFab()
+    {
+        ContentResolver resolver = getContext().getContentResolver();
+        Cursor cursor = resolver.query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                new String[]{MovieContract.MovieEntry.COL_MOVIE_ID},
+                MovieContract.MovieEntry.COL_MOVIE_ID + "=?",
+                new String[]{String.valueOf(movieID)},
+                null
+        );
+
+        try
+        {
+            if (cursor == null)
+                Log.d(TAG, "Cursor is null, check again!!");
+
+            if (cursor.getCount() > 0)
+            {
+                mPlayFab.setSelected(true);
+            }
+            else
+                mPlayFab.setSelected(false);
+        }
+        finally
+        {
+            cursor.close();
+        }
     }
 
 
@@ -188,7 +251,6 @@ public class DetailFragment extends Fragment
         {
             Log.d(TAG, "Share Action Provider is null?");
         }
-
 
 
     }
@@ -283,7 +345,7 @@ public class DetailFragment extends Fragment
                 .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
                 .build();
 
-        Log.d(TAG, "youtube uri is: "+ YouTubeUri.toString());
+        Log.d(TAG, "youtube uri is: " + YouTubeUri.toString());
 
         JsonObjectRequest YouTube = new JsonObjectRequest(
                 Request.Method.GET,
@@ -336,6 +398,7 @@ public class DetailFragment extends Fragment
     public void onStart()
     {
         super.onStart();
+        mMovieValues = new ContentValues();
         FetchMovieDataTask fetchTask = new FetchMovieDataTask();
         fetchTask.execute();
         updateReviewsAdapter();
@@ -357,53 +420,51 @@ public class DetailFragment extends Fragment
         );
     }
 
-    class FetchMovieDataTask extends AsyncTask<Void, Void, Void>
+    class FetchMovieDataTask extends AsyncTask<Void, Void, String>
     {
-        private  String movieJsonStr;
 
         @Override
-        protected void onPostExecute(Void aVoid)
+        protected void onPostExecute(String movieJsonStr)
         {
-            super.onPostExecute(aVoid);
+            super.onPostExecute(movieJsonStr);
 
             try
             {
-                JSONObject movieData = new JSONObject(movieJsonStr);
-//                getPosterURL(movieData.getString(Movie.BACKDROP_URL));
+                fillMovieValues(movieJsonStr);
 
                 Glide
                     .with(getContext())
-                    .load(getBackdropURL(movieData.getString(Movie.BACKDROP_URL)))
+                    .load(mMovieValues.get(MovieContract.MovieEntry.COL_BACKDROP_URL))
                     .into(mBackdrop);
 
                 Glide
                     .with(getContext())
-                    .load(getPosterURL(movieData.getString(Movie.POSTER_URL)))
+                    .load(mMovieValues.get(MovieContract.MovieEntry.COL_POSTER_URL))
                     .into(mPoster);
 
-                mCollapsingToolbar.setTitle(movieData.getString(Movie.ORIGINAL_TITLE));
-                mRatingTextView.setText(movieData.getString(Movie.VOTE_AVERAGE) + " /10");
-                mVotesCountTextView.setText(movieData.getString(Movie.VOTE_COUNT));
-                mOverviewTextView.setText(movieData.getString(Movie.OVERVIEW));
-                mReleaseDateTextView.setText(movieData.getString(Movie.RELEASE_DATE));
-                mDurationTextView.setText("Runtime: " + movieData.getString(Movie.RUNTIME));
+                mCollapsingToolbar.setTitle((CharSequence) mMovieValues.get(MovieContract.MovieEntry.COL_ORIGINAL_TITLE));
+                mRatingTextView
+                        .setText((Double) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE) + "/10");
 
+                mVotesCountTextView.setText("" + ((Integer) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_COUNT)));
+                mOverviewTextView.setText((String) mMovieValues.get(MovieContract.MovieEntry.COL_OVERVIEW));
 
+                mReleaseDateTextView.setText(""+ mMovieValues.get(MovieContract.MovieEntry.COL_RELEASE_DATE));
+                mDurationTextView.setText("Runtime: " + mMovieValues.get(MovieContract.MovieEntry.COL_RUNTIME));
             }
             catch (JSONException e)
             {
                 e.printStackTrace();
             }
-
-
         }
 
+
         @Override
-        protected Void doInBackground(Void... params)
+        protected String doInBackground(Void... params)
         {
             HttpsURLConnection httpsURLConnection = null;
             BufferedReader reader = null;
-            movieJsonStr = null;
+            String movieJsonStr = null;
             try
             {
                 Uri uriBuilder = Uri.parse(Movie.BASE_URL)
@@ -444,7 +505,7 @@ public class DetailFragment extends Fragment
                 }
 
                 movieJsonStr = buffer.toString();
-
+                return  movieJsonStr;
 
             }
             catch (MalformedURLException e)
@@ -470,7 +531,7 @@ public class DetailFragment extends Fragment
 
         }
 
-        private String getBackdropURL (String backdropPath)
+        private String getBackdropURL(String backdropPath)
         {
             return Uri.parse(Movie.IMAGE_BASE_URL)
                     .buildUpon()
@@ -478,6 +539,66 @@ public class DetailFragment extends Fragment
                     .appendEncodedPath(backdropPath)
                     .build().toString();
         }
+
+        private void fillMovieValues(String movieJsonStr) throws JSONException
+        {
+            JSONObject movieData = new JSONObject(movieJsonStr);
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_POSTER_URL,
+                    getPosterURL(movieData.getString(MovieContract.MovieEntry.COL_POSTER_URL)
+                    )
+            );
+
+            mMovieValues.put(MovieContract.MovieEntry.COL_IS_ADULT,
+                    movieData.getString(MovieContract.MovieEntry.COL_IS_ADULT)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_OVERVIEW,
+                    movieData.getString(MovieContract.MovieEntry.COL_OVERVIEW)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_RELEASE_DATE,
+                    movieData.getString(MovieContract.MovieEntry.COL_RELEASE_DATE)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_MOVIE_ID,
+                    movieData.getString(MovieContract.MovieEntry.COL_MOVIE_ID)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_ORIGINAL_TITLE,
+                    movieData.getString(MovieContract.MovieEntry.COL_ORIGINAL_TITLE)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_BACKDROP_URL,
+                    getBackdropURL(movieData.getString(MovieContract.MovieEntry.COL_BACKDROP_URL))
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_POPULARITY,
+                    movieData.getDouble(MovieContract.MovieEntry.COL_POPULARITY)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_VOTE_COUNT,
+                    movieData.getInt(MovieContract.MovieEntry.COL_VOTE_COUNT)
+            );
+
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_VOTE_AVERAGE,
+                    movieData.getDouble(MovieContract.MovieEntry.COL_VOTE_AVERAGE)
+            );
+/*
+            mMovieValues.put(
+                    MovieContract.MovieEntry.COL_RUNTIME,
+                    movieData.getInt(MovieContract.MovieEntry.COL_RUNTIME)
+            );*/
+        }
+
 
     }
 }
