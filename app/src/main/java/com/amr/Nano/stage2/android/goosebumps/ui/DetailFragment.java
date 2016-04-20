@@ -9,11 +9,16 @@ import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -59,7 +64,8 @@ public class DetailFragment extends Fragment
     private static final int SPAN_COUNT = 1;
     // boolean flag if(review total_results == 0) mIsReviews = false;
     private boolean mIsReviews;
-    private String mYouTubeUrl;
+    private String mYouTubeKey;
+    private ShareActionProvider mShareActionProvider;
 
     private int movieID;
     private RecyclerView.LayoutManager mLayoutManager;
@@ -112,6 +118,12 @@ public class DetailFragment extends Fragment
     }
     */
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
 
     @Nullable
     @Override
@@ -137,7 +149,7 @@ public class DetailFragment extends Fragment
         mReviewRecycler.setAdapter(mReviewsAdapter);
 
         // called this method cuz I have to wait for a moment before tapping playFAB.
-        getYouTubeUrl();
+        getYouTubeKey();
         mPlayFab.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -145,8 +157,8 @@ public class DetailFragment extends Fragment
             {
                 Log.d(TAG, "movie id is : " + movieID);
                 // getting youtube url:
-                if (getYouTubeUrl() != null)
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeUrl())));
+                if (getYouTubeKey() != null)
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeKey())));
                 else
                     Snackbar.make(view, "No trailer available.", Snackbar.LENGTH_LONG)
                         .show();
@@ -156,6 +168,40 @@ public class DetailFragment extends Fragment
         return rootView;
     }
 
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+    {
+        inflater.inflate(R.menu.details_fragment_menu, menu);
+
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+
+        mShareActionProvider = new ShareActionProvider(getContext());
+//                (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+
+        mShareActionProvider.setShareIntent(createShareMovieIntent());
+        MenuItemCompat.setActionProvider(menuItem, mShareActionProvider);
+        if (mShareActionProvider != null)
+        {
+            mShareActionProvider.setShareIntent(createShareMovieIntent());
+        } else
+        {
+            Log.d(TAG, "Share Action Provider is null?");
+        }
+
+
+
+    }
+
+    private Intent createShareMovieIntent()
+    {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+//        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT,
+                "check out this movie, \n" + "https://www.youtube.com/watch?v=" + mYouTubeKey);
+        return shareIntent;
+    }
 
     private void updateReviewsAdapter()
     {
@@ -227,7 +273,7 @@ public class DetailFragment extends Fragment
     }
 
 
-    public String getYouTubeUrl()
+    public String getYouTubeKey()
     {
         final Uri YouTubeUri = Uri.parse(Movie.BASE_URL)
                 .buildUpon()
@@ -253,13 +299,13 @@ public class DetailFragment extends Fragment
                             JSONArray results = response.getJSONArray("results");
                             if (true)
                             {
-                                mYouTubeUrl = results.getJSONObject(0).getString("key");
+                                mYouTubeKey = results.getJSONObject(0).getString("key");
                                 /*
-                                mYouTubeUrl = Uri.parse("http://www.youtube.com/watch")
+                                mYouTubeKey = Uri.parse("http://www.youtube.com/watch")
                                         .buildUpon()
                                         .appendQueryParameter("v", results.getJSONObject(0).getString("key"))
                                         .build().toString();
-                                Log.d(TAG, "youtube link is: " + mYouTubeUrl);
+                                Log.d(TAG, "youtube link is: " + mYouTubeKey);
                                 Log.d(TAG, "youtube key is: " + results.getJSONObject(0).getString("key"));
                                 */
                             }
@@ -282,8 +328,8 @@ public class DetailFragment extends Fragment
         );
 
         mRequestQueue.add(YouTube);
-        Log.d(TAG, "youtube link is : " + mYouTubeUrl);
-        return mYouTubeUrl;
+        Log.d(TAG, "youtube link is : " + mYouTubeKey);
+        return mYouTubeKey;
     }
 
     @Override
