@@ -6,10 +6,11 @@
     <string name="review_sample"> <b>One would think </b>that the ultimate showdown between two of the most iconic super-heroes would make for some downright compelling action-oriented exploits against a landscape of angst and destruction. Plus, it certainly did not hurt that exhilarating filmmaker Zack Snyder (‘300’) was at the helm in bringing together the colorfully and concocted confrontation between The Caped Crusader and The Man of Steel. Also, it should have been an effortless task to bring together **Batman v Superman: Dawn Of Justice** leading men Ben Affleck and Henry Cahill since they had prior experiences donning heroic attire as mighty super-heroes on call to save the day. So why then does Snyder’s big-budgeted connect-the-dots comic book caper feel so incoherently stiff and aimless? The dour randomness of **Batman v Superman: Dawn Of Justice** is quite disappointing because this moping actioner wants to grab more than it can chew in its crowded mouth. Snyder and screenwriters David S. Goyer and Chris Terrio aspire to plug in such contemplative issues pertaining to moral ambivalence, political platitudes and religious themes but none of these factors energize or sustain this action-packed narrative that seems to slouch all at the expense of a sluggish approach to the mechanical hedonism that labors. There is no doubt that **Dawn of Justice** has its share of visual opulence as this is obviously expected in an expansive superhero saga where the proven selling point are two mythical comic book titans spearheading the pumped-up proceedings. Again an overreaching script that plods along, a couple of super-powered sourpusses going the moody motions and the lack of carefree robust action undermine the potential explosiveness that **Dawn of Justice** could have capitalized on with dynamic aplomb.</string>
     <string name="overview_sample">A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground "fight clubs" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.</string>
     <string name="action_share">Share</string>
-    <string name="action_favorite">Favorite</string>
+    <string name="action_favorite">Favorites</string>
 
     <string name="prefs_sorting">SortingCriterion</string>
     <string name="prefs_popular">popular</string>
     <string name="prefs_top_rated">top_rated</string>
+    <string name="prefs_favorites">Favorites</string>
 
 </resources>

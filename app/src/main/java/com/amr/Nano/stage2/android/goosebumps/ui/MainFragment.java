@@ -2,11 +2,13 @@ package com.amr.Nano.stage2.android.goosebumps.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,6 +24,7 @@ import android.view.ViewGroup;
 import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.MoviesAdapter;
+import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -104,7 +107,7 @@ public class MainFragment extends Fragment
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
     {
         inflater.inflate(R.menu.main_menu, menu);
-        MenuItem item = menu.findItem(R.id.sorting_option);
+        MenuItem item = menu.findItem(R.id.popular_item);
         String title = prefs.getString(
                 getString(R.string.prefs_sorting),
                 getString(R.string.prefs_popular)
@@ -129,40 +132,45 @@ public class MainFragment extends Fragment
 
         switch (item.getItemId())
         {
-            case R.id.sorting_option:
+            case R.id.popular_item:
             {
-                String itemTitle = item.getTitle().toString();
-                if (itemTitle == getString(R.string.menu_popular))
-                {
-                    editor.putString(
-                            getString(R.string.prefs_sorting),
-                            getString(R.string.prefs_popular)
-                    );
-                    editor.apply();
-                    item.setTitle(getString(R.string.menu_top));
-                    mCollapsingToolbar.setTitle(getString(R.string.menu_popular).toUpperCase());
-                    new FetchMoviesTask().execute();
-                    return true;
-                }
+                mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
+                mRecyclerView.swapAdapter(mMoviesAdapter, false);
+                new FetchMoviesTask().execute();
 
-                if (itemTitle == getString(R.string.menu_top))
-                {
-
-                    editor.putString(
-                            getString(R.string.prefs_sorting),
-                            getString(R.string.prefs_top_rated)
-                    );
-                    editor.apply();
-                    item.setTitle(getString(R.string.menu_popular));
-                    mCollapsingToolbar.setTitle(getString(R.string.menu_top).toUpperCase());
-                    new FetchMoviesTask().execute();
-                    return true;
-                }
+                editor.putString(
+                        getString(R.string.prefs_sorting),
+                        getString(R.string.prefs_popular)
+                );
+                editor.apply();
+                return true;
 
 
             }
+            case R.id.top_rated_item:
+            {
+                mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
+                mCollapsingToolbar.setTitle(getString(R.string.menu_top));
+                new FetchMoviesTask().execute();
+
+                editor.putString(
+                        getString(R.string.prefs_sorting),
+                        getString(R.string.prefs_top_rated)
+                );
+                editor.apply();
+
+                mRecyclerView.swapAdapter(mMoviesAdapter, false);
+                return true;
+            }
             case R.id.favorites:
             {
+                mCollapsingToolbar.setTitle("Favorites");
+                updateAdapterFromCursor();
+                editor.putString(
+                        getString(R.string.prefs_sorting),
+                        getString(R.string.prefs_favorites)
+                );
+                editor.apply();
                 return true;
             }
             default:
@@ -172,13 +180,68 @@ public class MainFragment extends Fragment
 
 
 
+    private void updateAdapterFromCursor()
+    {
+        Cursor cursor = getContext().getContentResolver().query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null
+        );
+
+        ArrayList<Movie> favoritesList = new ArrayList<>();
+        int movieIdIndex = cursor.getColumnIndex(MovieContract.MovieEntry.COL_MOVIE_ID);
+        int posterIndex = cursor.getColumnIndex(MovieContract.MovieEntry.COL_POSTER_URL);
+
+        try
+        {
+            while (cursor.moveToNext())
+            {
+                favoritesList.add(
+                        new Movie(
+                                cursor.getInt(movieIdIndex),
+                                cursor.getString(posterIndex)
+                        )
+                );
+            }
+        }
+        finally
+        {
+            cursor.close();
+        }
+
+        if (favoritesList.size() == 0)
+            Snackbar.make(
+                    mRecyclerView, "Seems you haven't favored any movies yet",
+                    Snackbar.LENGTH_LONG)
+                    .show();
+
+        mMoviesAdapter.clear();
+        mMoviesAdapter.addAll(favoritesList);
+    }
+
     @Override
     public void onStart()
     {
         super.onStart();
-        mFetchMoviesTask = new FetchMoviesTask();
-        mFetchMoviesTask.execute();
+        String currentSetting = prefs.getString(
+                getString(R.string.prefs_sorting),
+                getString(R.string.prefs_popular)
+        );
+
+        if (currentSetting == getString(R.string.prefs_favorites))
+        {
+            updateAdapterFromCursor();
+        }
+        else
+        {
+            mFetchMoviesTask = new FetchMoviesTask();
+            mFetchMoviesTask.execute();
+        }
     }
+
+
 
     class FetchMoviesTask extends AsyncTask<Void, Void, ArrayList<Movie>>
     {

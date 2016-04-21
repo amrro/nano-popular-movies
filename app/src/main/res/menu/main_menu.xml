@@ -3,10 +3,14 @@
       xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/sorting_option"
-        android:title="@string/menu_top"
+        android:id="@+id/popular_item"
+        android:title="@string/menu_popular"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/top_rated_item"
+        android:title="@string/menu_top"
+        app:showAsAction="never"/>
     <item
         android:id="@+id/favorites"
         android:title="@string/action_favorite"

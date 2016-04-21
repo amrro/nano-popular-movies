@@ -496,6 +496,9 @@ public class DetailFragment extends Fragment
                 mRatingTextView
                         .setText((Double) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE) + "/10");
 
+                String rating = String.valueOf(mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE));
+                mRatingBar.setRating(Float.parseFloat(rating) / 10);
+
                 mVotesCountTextView.setText("" + ((Integer) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_COUNT)));
                 mOverviewTextView.setText((String) mMovieValues.get(MovieContract.MovieEntry.COL_OVERVIEW));
 
