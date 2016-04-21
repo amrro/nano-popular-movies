@@ -1,14 +1,21 @@
 package com.amr.Nano.stage2.android.goosebumps.ui;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -30,6 +37,9 @@ import java.util.ArrayList;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+
 /**
  *
  * Created by amro on 4/16/16.
@@ -38,7 +48,16 @@ import javax.net.ssl.HttpsURLConnection;
 public class MainFragment extends Fragment
 {
     final private int SPAN_COUNT = 2;
-    private RecyclerView mRecyclerView;
+    @Bind(R.id.recycler_view)
+    RecyclerView mRecyclerView;
+    private SharedPreferences prefs;
+
+    @Bind(R.id.main_toolbar)
+    Toolbar mToolbar;
+
+    @Bind(R.id.main_collapsing_toolbar)
+    CollapsingToolbarLayout mCollapsingToolbar;
+
     private RecyclerView.LayoutManager mLayoutManager;
     private MoviesAdapter mMoviesAdapter;
     private FetchMoviesTask mFetchMoviesTask;
@@ -52,13 +71,19 @@ public class MainFragment extends Fragment
         setHasOptionsMenu(true);
     }
 
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState)
     {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+        ButterKnife.bind(this, rootView);
+
+        prefs = getActivity()
+                .getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
+
+        ((MainActivity) getActivity()).setSupportActionBar(mToolbar);
+        mCollapsingToolbar.setTitle("Most Popular");
+
         mMoviesAdapter = new MoviesAdapter(getContext(), new ArrayList<Movie>());
         // improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -70,9 +95,81 @@ public class MainFragment extends Fragment
         mRecyclerView.setAdapter(mMoviesAdapter);
 
         mFetchMoviesTask = new FetchMoviesTask();
-        mFetchMoviesTask.execute("popular");
+        mFetchMoviesTask.execute();
         return rootView;
     }
+
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+    {
+        inflater.inflate(R.menu.main_menu, menu);
+        MenuItem item = menu.findItem(R.id.sorting_option);
+        String title = prefs.getString(
+                getString(R.string.prefs_sorting),
+                getString(R.string.prefs_popular)
+        );
+
+        if (title == getString(R.string.prefs_popular))
+        {
+            item.setTitle(getString(R.string.menu_popular).toUpperCase());
+        }
+
+        if (title == getString(R.string.prefs_top_rated))
+        {
+            item.setTitle(getString(R.string.menu_top).toUpperCase());
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+
+        SharedPreferences.Editor editor = prefs.edit();
+
+        switch (item.getItemId())
+        {
+            case R.id.sorting_option:
+            {
+                String itemTitle = item.getTitle().toString();
+                if (itemTitle == getString(R.string.menu_popular))
+                {
+                    editor.putString(
+                            getString(R.string.prefs_sorting),
+                            getString(R.string.prefs_popular)
+                    );
+                    editor.apply();
+                    item.setTitle(getString(R.string.menu_top));
+                    mCollapsingToolbar.setTitle(getString(R.string.menu_popular).toUpperCase());
+                    new FetchMoviesTask().execute();
+                    return true;
+                }
+
+                if (itemTitle == getString(R.string.menu_top))
+                {
+
+                    editor.putString(
+                            getString(R.string.prefs_sorting),
+                            getString(R.string.prefs_top_rated)
+                    );
+                    editor.apply();
+                    item.setTitle(getString(R.string.menu_popular));
+                    mCollapsingToolbar.setTitle(getString(R.string.menu_top).toUpperCase());
+                    new FetchMoviesTask().execute();
+                    return true;
+                }
+
+
+            }
+            case R.id.favorites:
+            {
+                return true;
+            }
+            default:
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
 
     @Override
@@ -80,28 +177,28 @@ public class MainFragment extends Fragment
     {
         super.onStart();
         mFetchMoviesTask = new FetchMoviesTask();
-        mFetchMoviesTask.execute("popular");
+        mFetchMoviesTask.execute();
     }
 
-    class FetchMoviesTask extends AsyncTask<String, Void, ArrayList<Movie>>
+    class FetchMoviesTask extends AsyncTask<Void, Void, ArrayList<Movie>>
     {
 
         private final String TAG = FetchMoviesTask.class.getSimpleName();
 
         @Override
-        protected ArrayList<Movie> doInBackground(String... params)
+        protected ArrayList<Movie> doInBackground(Void... params)
         {
             HttpsURLConnection httpsURLConnection = null;
             BufferedReader reader = null;
             String moviesJsonStr = null;
-
             try
             {
-
+                Log.d(TAG, "preference is set to: " +
+                        prefs.getString(getString(R.string.prefs_sorting), getString(R.string.prefs_popular)));
                 Uri uriBuilder = Uri.parse(Movie.BASE_URL)
                         .buildUpon()
                         .appendPath("movie")
-                        .appendPath(params[0])
+                        .appendPath(prefs.getString(getString(R.string.prefs_sorting), getString(R.string.prefs_popular)))
                         .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
                         .build();
 
@@ -213,21 +310,4 @@ public class MainFragment extends Fragment
         }
     }
 
-
-
-    class FetchReviewsTask extends AsyncTask<Void, Void, Void>
-    {
-        public final String TAG = FetchReviewsTask.class.getSimpleName();
-        @Override
-        protected void onPostExecute(Void aVoid)
-        {
-            super.onPostExecute(aVoid);
-        }
-
-        @Override
-        protected Void doInBackground(Void... params)
-        {
-            return null;
-        }
-    }
 }

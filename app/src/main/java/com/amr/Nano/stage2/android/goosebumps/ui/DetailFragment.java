@@ -83,10 +83,10 @@ public class DetailFragment extends Fragment
     @Bind(R.id.recycler_view_reviews)
     RecyclerView mReviewRecycler;
 
-    @Bind(R.id.collapsing_toolbar)
+    @Bind(R.id.details_collapsing_toolbar)
     CollapsingToolbarLayout mCollapsingToolbar;
 
-    @Bind(R.id.toolbar)
+    @Bind(R.id.main_toolbar)
     Toolbar mToolbar;
 
     // Linking views id to fields
