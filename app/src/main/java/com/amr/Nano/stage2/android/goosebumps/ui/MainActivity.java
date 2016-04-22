@@ -6,9 +6,12 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
+import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 
 public class MainActivity extends AppCompatActivity
 {
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
+    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -17,12 +20,28 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         setUpSharedPreferences();
-        if (savedInstanceState == null)
-        {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.main, new MainFragment())
-                    .commit();
+
+        if (findViewById(R.id.fragment_details_container) != null) {
+            // The detail container view will be present only in the large-screen layouts
+            // (res/layout-sw600dp). If this view is present, then the activity should be
+            // in two-pane mode.
+            mTwoPane = true;
+            // In two-pane mode, show the detail view in this activity by
+            // adding or replacing the detail fragment using a
+            // fragment transaction.
+            Bundle bundle = new Bundle();
+            bundle.putInt(MovieContract.MovieEntry.COL_MOVIE_ID, 550);
+            DetailFragment detailFragment = new DetailFragment();
+            detailFragment.setArguments(bundle);
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_details_container, detailFragment, DETAILFRAGMENT_TAG)
+                        .commit();
+            }
+        } else {
+            mTwoPane = false;
         }
+
     }
 
     private void setUpSharedPreferences()

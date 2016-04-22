@@ -14,6 +14,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.ShareActionProvider;
@@ -25,6 +26,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -117,6 +119,9 @@ public class DetailFragment extends Fragment
     @Bind(R.id.play_fab)
     FloatingActionButton mPlayFab;
 
+    @Bind(R.id.play_trailer)
+    ImageButton mPlayButton;
+
     //TODO remember you can bind strings too using @BindString
 
     /*
@@ -139,15 +144,17 @@ public class DetailFragment extends Fragment
         View rootView = inflater.inflate(R.layout.fragment_details, container, false);
         ButterKnife.bind(this, rootView);
 
-        ((DetailActivity) getActivity()).setSupportActionBar(mToolbar);
-        ((DetailActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(mToolbar);
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
+//        movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
+        movieID = (int) getArguments().get(MovieContract.MovieEntry.COL_MOVIE_ID);
+//        movieID = passedData.getInt(MovieContract.MovieEntry.COL_MOVIE_ID);
         Log.d(TAG, "::: Recieved Movie ID is: " + movieID);
 
         mRequestQueue = VolleySingleton.getInstance().getRequestQueue();
 
-//        mReviewRecycler.setHasFixedSize(true);
+        mReviewRecycler.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getContext());
         mReviewRecycler.setLayoutManager(mLayoutManager);
 
@@ -233,16 +240,28 @@ public class DetailFragment extends Fragment
                             .show();
                     setPlayFab();
                 }
-               /*
-                Log.d(TAG, "movie id is : " + movieID);
-                // getting youtube url:
-                if (getYouTubeKey() != null)
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeKey())));
-                else
-                    Snackbar.make(view, "No trailer available.", Snackbar.LENGTH_LONG)
-                        .show();*/
+
             }
         });
+
+
+        mPlayButton.setOnClickListener(
+                new View.OnClickListener()
+                {
+                    @Override
+                    public void onClick(View v)
+                    {
+
+                        Log.d(TAG, "movie id is : " + movieID);
+                        // getting youtube url:
+                        if (getYouTubeKey() != null)
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + getYouTubeKey())));
+                        else
+                            Snackbar.make(v, "No trailer available.", Snackbar.LENGTH_LONG)
+                                    .show();
+                    }
+                }
+        );
 
         return rootView;
     }
@@ -443,6 +462,13 @@ public class DetailFragment extends Fragment
         Log.d(TAG, "youtube link is : " + mYouTubeKey);
         return mYouTubeKey;
     }
+
+    public void  playTrailer()
+    {
+        Snackbar.make(mReviewRecycler, "Play trailer.", Snackbar.LENGTH_LONG)
+            .show();
+    }
+
 
     @Override
     public void onStart()

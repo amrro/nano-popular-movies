@@ -53,6 +53,7 @@
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
 
 
+
         </android.support.design.widget.CollapsingToolbarLayout>
 
     </android.support.design.widget.AppBarLayout>
@@ -89,7 +90,7 @@
                     android:src="@drawable/poster_sample"/>
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_alignTop="@+id/poster_image"
                     android:layout_marginLeft="21dp"
@@ -97,7 +98,8 @@
                     android:layout_marginTop="12dp"
                     android:layout_toEndOf="@+id/poster_image"
                     android:layout_toRightOf="@+id/poster_image"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:id="@+id/linearLayout">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -157,6 +159,18 @@
 
 
                 </LinearLayout>
+
+                <ImageButton
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:id="@+id/play_trailer"
+                    android:scaleType="fitCenter"
+                    android:src="@mipmap/ic_play_arrow_black_24dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_below="@+id/linearLayout"/>
+
             </RelativeLayout>
 
             <LinearLayout

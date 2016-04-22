@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
+import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 import com.amr.Nano.stage2.android.goosebumps.ui.DetailActivity;
 import com.bumptech.glide.Glide;
 
@@ -84,7 +85,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
                 {
                     Intent detailsIntent = new Intent(v.getContext(), DetailActivity.class);
                     detailsIntent.putExtra(
-                            Movie.MOVIE_ID,
+                            MovieContract.MovieEntry.COL_MOVIE_ID,
                             mMoviesSet.get(getPosition()).getID()
                     );
                     mContext.startActivity(detailsIntent);
