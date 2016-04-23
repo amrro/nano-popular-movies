@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
@@ -11,7 +12,7 @@ import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 public class MainActivity extends AppCompatActivity
 {
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
-    private boolean mTwoPane;
+    public static boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -49,6 +50,12 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences prefs = getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(getString(R.string.prefs_sorting),getString(R.string.prefs_popular));
-        editor.apply();
+        editor.putBoolean(DETAILFRAGMENT_TAG, mTwoPane);
+        editor.commit();
+    }
+
+    public static boolean getPane(){
+        Log.i("pane",mTwoPane+"");
+        return mTwoPane;
     }
 }
