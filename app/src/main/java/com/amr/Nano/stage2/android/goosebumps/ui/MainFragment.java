@@ -64,6 +64,7 @@ public class MainFragment extends Fragment
     private RecyclerView.LayoutManager mLayoutManager;
     private MoviesAdapter mMoviesAdapter;
     private FetchMoviesTask mFetchMoviesTask;
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
 
 
 
@@ -87,7 +88,7 @@ public class MainFragment extends Fragment
         ((MainActivity) getActivity()).setSupportActionBar(mToolbar);
         mCollapsingToolbar.setTitle("Most Popular");
 
-        mMoviesAdapter = new MoviesAdapter(getContext(), new ArrayList<Movie>());
+        mMoviesAdapter = new MoviesAdapter(getContext(), new ArrayList<Movie>(),MainActivity.mTwoPane);
         // improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
@@ -102,7 +103,11 @@ public class MainFragment extends Fragment
         return rootView;
     }
 
-
+    private boolean isTwoPane()
+    {
+        SharedPreferences prefs = getContext().getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
+        return prefs.getBoolean(DETAILFRAGMENT_TAG, true);
+    }
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
     {
@@ -113,12 +118,12 @@ public class MainFragment extends Fragment
                 getString(R.string.prefs_popular)
         );
 
-        if (title == getString(R.string.prefs_popular))
+        if (title.equals(getString(R.string.prefs_popular)))
         {
             item.setTitle(getString(R.string.menu_popular).toUpperCase());
         }
 
-        if (title == getString(R.string.prefs_top_rated))
+        if (title.equals(getString(R.string.prefs_top_rated)))
         {
             item.setTitle(getString(R.string.menu_top).toUpperCase());
         }

@@ -2,7 +2,9 @@ package com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,8 @@ import android.widget.ImageView;
 import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
 import com.amr.Nano.stage2.android.goosebumps.ui.DetailActivity;
+import com.amr.Nano.stage2.android.goosebumps.ui.DetailFragment;
+import com.amr.Nano.stage2.android.goosebumps.ui.MainActivity;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
@@ -23,15 +27,20 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
 {
     private ArrayList<Movie> mMoviesSet;
     private Context mContext;
+    private boolean mTwoPane = MainActivity.mTwoPane;
+    private static final String DETAILFRAGMENT_TAG = "DFTAG";
+
 
 
     // provide the adapter with data
 
 
-    public MoviesAdapter(Context context, ArrayList<Movie> moviesSet)
+    public MoviesAdapter(Context context, ArrayList<Movie> moviesSet, boolean twoPane)
     {
         mContext = context;
         mMoviesSet = moviesSet;
+
+
     }
 
     @Override
@@ -83,14 +92,31 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
                 @Override
                 public void onClick(View v)
                 {
-                    Intent detailsIntent = new Intent(v.getContext(), DetailActivity.class);
-                    detailsIntent.putExtra(
-                            MovieContract.MovieEntry.COL_MOVIE_ID,
-                            mMoviesSet.get(getPosition()).getID()
-                    );
-                    mContext.startActivity(detailsIntent);
+                    Log.d(DETAILFRAGMENT_TAG, "two panes is: " + mTwoPane);
+
+                    if (MainActivity.getPane())
+                    {
+                        DetailFragment details = (DetailFragment) ((FragmentActivity) mContext)
+                                .getSupportFragmentManager()
+                                .findFragmentByTag(DETAILFRAGMENT_TAG);
+
+                        details.updateFragment(mMoviesSet.get(getPosition()).getID());
+                    }
+
+                    else
+                    {
+                        Intent detailsIntent = new Intent(v.getContext(), DetailActivity.class);
+                        detailsIntent.putExtra(
+                                MovieContract.MovieEntry.COL_MOVIE_ID,
+                                mMoviesSet.get(getPosition()).getID()
+                        );
+                        mContext.startActivity(detailsIntent);
+                    }
+
                 }
             });
+
+
         }
     }
 }

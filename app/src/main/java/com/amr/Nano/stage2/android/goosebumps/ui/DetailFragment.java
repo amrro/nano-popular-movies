@@ -267,6 +267,14 @@ public class DetailFragment extends Fragment
     }
 
 
+
+    public void updateFragment(int newID)
+    {
+        movieID = newID;
+        new FetchMovieDataTask().execute();
+        updateReviewsAdapter();
+    }
+
     /***
      * Helper method to set the selection state of the fab (.setSelected()) from (selector<></>)
      * this method makes the the selection state depend on the database.
