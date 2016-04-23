@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.Snackbar;
@@ -82,8 +83,7 @@ public class MainFragment extends Fragment
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ButterKnife.bind(this, rootView);
 
-        prefs = getActivity()
-                .getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 
         ((MainActivity) getActivity()).setSupportActionBar(mToolbar);
         mCollapsingToolbar.setTitle("Most Popular");
@@ -235,7 +235,7 @@ public class MainFragment extends Fragment
                 getString(R.string.prefs_popular)
         );
 
-        if (currentSetting == getString(R.string.prefs_favorites))
+        if (currentSetting.equals(getString(R.string.prefs_favorites)))
         {
             updateAdapterFromCursor();
         }
@@ -342,16 +342,22 @@ public class MainFragment extends Fragment
 
             JSONObject list = new JSONObject(jsonUrl);
             JSONArray results = list.getJSONArray("results");
-
-            for (int i = 0; i < results.length(); ++i)
+            if (results != null)
             {
-                JSONObject singleMovie = results.getJSONObject(i);
-                retList.add(
-                        new Movie(
-                                singleMovie.getInt(Movie.MOVIE_ID),
-                                getPosterURL(singleMovie.getString(Movie.POSTER_URL))
-                        )
-                );
+                for (int i = 0; i < results.length(); ++i)
+                {
+                    JSONObject singleMovie = results.getJSONObject(i);
+                    retList.add(
+                            new Movie(
+                                    singleMovie.getInt(Movie.MOVIE_ID),
+                                    getPosterURL(singleMovie.getString(Movie.POSTER_URL))
+                            )
+                    );
+                }
+            }
+            else
+            {
+                Log.d(TAG, "results array from JSON is empty!");
             }
             return  retList;
         }

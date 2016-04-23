@@ -525,6 +525,10 @@ public class DetailFragment extends Fragment
                     .with(getContext())
                     .load(mMovieValues.get(MovieContract.MovieEntry.COL_POSTER_URL))
                     .into(mPoster);
+                ViewGroup.LayoutParams params = mPoster.getLayoutParams();
+                Log.d(TAG, "poster width is: " + params.width);
+                Log.d(TAG, "poster height  is: " + params.height);
+
 
                 mCollapsingToolbar.setTitle((CharSequence) mMovieValues.get(MovieContract.MovieEntry.COL_ORIGINAL_TITLE));
                 mRatingTextView

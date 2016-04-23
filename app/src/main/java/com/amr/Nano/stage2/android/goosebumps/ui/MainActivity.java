@@ -1,8 +1,8 @@
 package com.amr.Nano.stage2.android.goosebumps.ui;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
@@ -47,11 +47,11 @@ public class MainActivity extends AppCompatActivity
 
     private void setUpSharedPreferences()
     {
-        SharedPreferences prefs = getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(getString(R.string.prefs_sorting),getString(R.string.prefs_popular));
         editor.putBoolean(DETAILFRAGMENT_TAG, mTwoPane);
-        editor.commit();
+        editor.apply();
     }
 
     public static boolean getPane(){

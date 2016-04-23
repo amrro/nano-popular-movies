@@ -36,7 +36,6 @@
                 android:layout_height="match_parent"
                 android:fitsSystemWindows="true"
                 android:scaleType="centerCrop"
-                android:src="@drawable/backdrop_sample"
                 app:layout_collapseMode="parallax"/>
 
             <View
@@ -79,6 +78,7 @@
 
                 <ImageView
                     android:elevation="4dp"
+                    android:src="@drawable/poster_sample"
                     android:id="@+id/poster_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -86,8 +86,7 @@
                     android:layout_alignParentStart="true"
                     android:layout_marginLeft="24dp"
                     android:layout_marginStart="14dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/poster_sample"/>
+                    android:scaleType="centerCrop"/>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
