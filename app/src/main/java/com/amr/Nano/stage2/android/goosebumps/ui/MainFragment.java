@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -21,6 +22,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
@@ -49,9 +51,10 @@ import butterknife.ButterKnife;
  * Created by amro on 4/16/16.
  */
 
-public class MainFragment extends Fragment
+public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener
 {
     final private int SPAN_COUNT = 2;
+
     @Bind(R.id.recycler_view)
     RecyclerView mRecyclerView;
     private SharedPreferences prefs;
@@ -61,6 +64,9 @@ public class MainFragment extends Fragment
 
     @Bind(R.id.main_collapsing_toolbar)
     CollapsingToolbarLayout mCollapsingToolbar;
+
+    @Bind(R.id.swipe_refresh_movies)
+    SwipeRefreshLayout mRefreshMovies;
 
     private RecyclerView.LayoutManager mLayoutManager;
     private MoviesAdapter mMoviesAdapter;
@@ -92,6 +98,8 @@ public class MainFragment extends Fragment
         // improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
+
+        mRefreshMovies.setOnRefreshListener(this);
 
         mLayoutManager = new GridLayoutManager(getContext(), SPAN_COUNT);
 
@@ -140,14 +148,13 @@ public class MainFragment extends Fragment
             case R.id.popular_item:
             {
                 mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
-                mRecyclerView.swapAdapter(mMoviesAdapter, false);
-                new FetchMoviesTask().execute();
 
                 editor.putString(
                         getString(R.string.prefs_sorting),
                         getString(R.string.prefs_popular)
                 );
                 editor.apply();
+                chooseAdapter();
                 return true;
 
 
@@ -156,7 +163,6 @@ public class MainFragment extends Fragment
             {
                 mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
                 mCollapsingToolbar.setTitle(getString(R.string.menu_top));
-                new FetchMoviesTask().execute();
 
                 editor.putString(
                         getString(R.string.prefs_sorting),
@@ -164,18 +170,18 @@ public class MainFragment extends Fragment
                 );
                 editor.apply();
 
-                mRecyclerView.swapAdapter(mMoviesAdapter, false);
+                chooseAdapter();
                 return true;
             }
             case R.id.favorites:
             {
                 mCollapsingToolbar.setTitle("Favorites");
-                updateAdapterFromCursor();
                 editor.putString(
                         getString(R.string.prefs_sorting),
                         getString(R.string.prefs_favorites)
                 );
                 editor.apply();
+                chooseAdapter();
                 return true;
             }
             default:
@@ -224,12 +230,29 @@ public class MainFragment extends Fragment
 
         mMoviesAdapter.clear();
         mMoviesAdapter.addAll(favoritesList);
+        if (mRefreshMovies.isRefreshing())
+            mRefreshMovies.setRefreshing(false);
     }
 
     @Override
     public void onStart()
     {
         super.onStart();
+        chooseAdapter();
+    }
+
+    @Override
+    public void onRefresh()
+    {
+        chooseAdapter();
+        Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
+                .show();
+
+
+    }
+
+    private void chooseAdapter()
+    {
         String currentSetting = prefs.getString(
                 getString(R.string.prefs_sorting),
                 getString(R.string.prefs_popular)
@@ -245,8 +268,6 @@ public class MainFragment extends Fragment
             mFetchMoviesTask.execute();
         }
     }
-
-
 
     class FetchMoviesTask extends AsyncTask<Void, Void, ArrayList<Movie>>
     {
@@ -380,6 +401,8 @@ public class MainFragment extends Fragment
                 Log.d(TAG, movies.get(0).getPosterURL());
                 mMoviesAdapter.clear();
                 mMoviesAdapter.addAll(movies);
+                if (mRefreshMovies.isRefreshing())
+                    mRefreshMovies.setRefreshing(false);
             }
         }
     }
