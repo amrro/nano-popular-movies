@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.graphics.Color;
@@ -12,6 +13,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -295,7 +297,11 @@ public class DetailFragment extends Fragment
 
         try
         {
-            if (cursor.getCount() == 1 && cursor.moveToNext())
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+            String sorting = prefs.getString(getString(R.string.prefs_sorting),getString(R.string.prefs_popular));
+            if (cursor.getCount() == 1
+                    && cursor.moveToNext() && sorting.equals(getString(R.string.prefs_favorites))
+                    && !isNetworkAvailable())
             {
                 DatabaseUtils.cursorRowToContentValues(cursor, mMovieValues);
                 updateViews();
