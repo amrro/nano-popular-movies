@@ -241,8 +241,8 @@
 
         <android.support.design.widget.FloatingActionButton
             android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:id="@+id/play_fab"
+            android:layout_width="120dp"
+            android:id="@+id/favorite_fab"
             app:layout_anchor="@id/appbar"
             app:layout_anchorGravity="bottom|right|end"
             style="@style/FavoriteButton"

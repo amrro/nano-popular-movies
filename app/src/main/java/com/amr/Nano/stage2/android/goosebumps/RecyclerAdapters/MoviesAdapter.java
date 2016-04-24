@@ -80,13 +80,14 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
         notifyDataSetChanged();
     }
 
-    public class MovieHolder extends RecyclerView.ViewHolder
+    public class MovieHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener
     {
         public ImageView posterView;
         public MovieHolder(ImageView image)
         {
             super(image);
             posterView = image;
+            itemView.setOnLongClickListener(this);
             itemView.setOnClickListener(new View.OnClickListener()
             {
                 @Override
@@ -117,6 +118,13 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
             });
 
 
+        }
+
+
+        @Override
+        public boolean onLongClick(View v)
+        {
+            return true;
         }
     }
 }

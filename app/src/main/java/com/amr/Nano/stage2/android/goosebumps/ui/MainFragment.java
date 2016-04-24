@@ -3,7 +3,11 @@ package com.amr.Nano.stage2.android.goosebumps.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -98,7 +102,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         // improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
-
         mRefreshMovies.setOnRefreshListener(this);
 
         mLayoutManager = new GridLayoutManager(getContext(), SPAN_COUNT);
@@ -106,8 +109,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setAdapter(mMoviesAdapter);
 
-        mFetchMoviesTask = new FetchMoviesTask();
-        mFetchMoviesTask.execute();
         return rootView;
     }
 
@@ -190,7 +191,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     }
 
 
-
     private void updateAdapterFromCursor()
     {
         Cursor cursor = getContext().getContentResolver().query(
@@ -231,7 +231,11 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         mMoviesAdapter.clear();
         mMoviesAdapter.addAll(favoritesList);
         if (mRefreshMovies.isRefreshing())
+        {
             mRefreshMovies.setRefreshing(false);
+            Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
+                    .show();
+        }
     }
 
     @Override
@@ -245,10 +249,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     public void onRefresh()
     {
         chooseAdapter();
-        Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
-                .show();
-
-
     }
 
     private void chooseAdapter()
@@ -257,16 +257,54 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 getString(R.string.prefs_sorting),
                 getString(R.string.prefs_popular)
         );
-
-        if (currentSetting.equals(getString(R.string.prefs_favorites)))
+        if (!isNetworkAvailable())
         {
             updateAdapterFromCursor();
+            mCollapsingToolbar.setTitle("Favorites");
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(
+                    getString(R.string.prefs_sorting),
+                    getString(R.string.prefs_favorites)
+            );
+            editor.apply();
+            Snackbar.make(mRecyclerView, "You are offline; Browse your favorites instead.", 5500)
+                    .setActionTextColor(Color.WHITE)
+                    .setAction("Enable Wi-Fi", new View.OnClickListener()
+                    {
+                        @Override
+                        public void onClick(View v)
+                        {
+                            enableWifi();
+                        }
+                    })
+                    .show();
         }
         else
         {
-            mFetchMoviesTask = new FetchMoviesTask();
-            mFetchMoviesTask.execute();
+            if (currentSetting.equals(getString(R.string.prefs_favorites)))
+            {
+                updateAdapterFromCursor();
+            } else
+            {
+                mFetchMoviesTask = new FetchMoviesTask();
+                mFetchMoviesTask.execute();
+            }
         }
+    }
+
+
+    public boolean isNetworkAvailable()
+    {
+        ConnectivityManager cm =
+                (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    public boolean enableWifi()
+    {
+        WifiManager wifiManager = (WifiManager)getContext().getSystemService(Context.WIFI_SERVICE);
+        return wifiManager.setWifiEnabled(true);
     }
 
     class FetchMoviesTask extends AsyncTask<Void, Void, ArrayList<Movie>>
@@ -402,7 +440,11 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 mMoviesAdapter.clear();
                 mMoviesAdapter.addAll(movies);
                 if (mRefreshMovies.isRefreshing())
+                {
                     mRefreshMovies.setRefreshing(false);
+                    Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
+                            .show();
+                }
             }
         }
     }

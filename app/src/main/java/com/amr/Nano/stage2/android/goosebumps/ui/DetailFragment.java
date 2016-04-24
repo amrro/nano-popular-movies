@@ -2,9 +2,13 @@ package com.amr.Nano.stage2.android.goosebumps.ui;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -116,8 +120,8 @@ public class DetailFragment extends Fragment
     @Bind(R.id.duration_text)
     TextView mDurationTextView;
 
-    @Bind(R.id.play_fab)
-    FloatingActionButton mPlayFab;
+    @Bind(R.id.favorite_fab)
+    FloatingActionButton mFavoriteFab;
 
     @Bind(R.id.play_trailer)
     ImageButton mPlayButton;
@@ -149,17 +153,25 @@ public class DetailFragment extends Fragment
 
 //        movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
         movieID = (int) getArguments().get(MovieContract.MovieEntry.COL_MOVIE_ID);
+
 //        movieID = passedData.getInt(MovieContract.MovieEntry.COL_MOVIE_ID);
         Log.d(TAG, "::: Recieved Movie ID is: " + movieID);
 
         mRequestQueue = VolleySingleton.getInstance().getRequestQueue();
-
+        updateFragment(movieID);
         mReviewRecycler.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(getContext());
         mReviewRecycler.setLayoutManager(mLayoutManager);
 
         mReviewsAdapter = new ReviewsAdapter(getContext(), new ArrayList<Review>());
-        updateReviewsAdapter();
+        /*
+        if (isNetworkAvailable())
+            updateReviewsAdapter();
+        else
+        {
+            Snackbar.make(mReviewRecycler, "Couldn't load reviews because you are offline!", Snackbar.LENGTH_LONG);
+        }
+        */
         mReviewRecycler.setAdapter(mReviewsAdapter);
 
 
@@ -167,7 +179,7 @@ public class DetailFragment extends Fragment
 
         // called this method cuz I have to wait for a moment before tapping playFAB.
         getYouTubeKey();
-        mPlayFab.setOnClickListener(new View.OnClickListener()
+        mFavoriteFab.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
@@ -178,7 +190,7 @@ public class DetailFragment extends Fragment
                 /**
                  * in case the movie is already in favorites:
                  */
-                if (mPlayFab.isSelected())
+                if (mFavoriteFab.isSelected())
                 {
                     resolver.delete(
                             MovieContract.MovieEntry.CONTENT_URI,
@@ -205,9 +217,9 @@ public class DetailFragment extends Fragment
                             .show();
 
                     /**
-                     * mPlayFab.setSelected(false) could be used
+                     * mFavoriteFab.setSelected(false) could be used
                      * instead, I used setPlayFab() to make sure that the entry really deleted
-                     * Consequently, mPlayFab depends on the database.
+                     * Consequently, mFavoriteFab depends on the database.
                      */
 
                     setPlayFab();
@@ -271,8 +283,35 @@ public class DetailFragment extends Fragment
     public void updateFragment(int newID)
     {
         movieID = newID;
-        new FetchMovieDataTask().execute();
-        updateReviewsAdapter();
+        mMovieValues = new ContentValues();
+        ContentResolver resolver= getActivity().getContentResolver();
+        Cursor cursor = resolver.query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                null,
+                MovieContract.MovieEntry.COL_MOVIE_ID + "=?",
+                new String[]{String.valueOf(movieID)},
+                null
+        );
+
+        try
+        {
+            if (cursor.getCount() == 1 && cursor.moveToNext())
+            {
+                DatabaseUtils.cursorRowToContentValues(cursor, mMovieValues);
+                updateViews();
+            }
+            else
+            {
+                new FetchMovieDataTask().execute();
+                updateReviewsAdapter();
+            }
+        }
+        finally
+        {
+            if (cursor != null)
+                cursor.close();
+        }
+
     }
 
     /***
@@ -297,10 +336,10 @@ public class DetailFragment extends Fragment
 
             if (cursor.getCount() > 0)
             {
-                mPlayFab.setSelected(true);
+                mFavoriteFab.setSelected(true);
             }
             else
-                mPlayFab.setSelected(false);
+                mFavoriteFab.setSelected(false);
         }
         finally
         {
@@ -353,7 +392,7 @@ public class DetailFragment extends Fragment
                 .build();
 
         // working perfectly:
-//        Log.d("USER_PROFILE", "" + reviewsUri.toString());
+        Log.d("USER_PROFILE", "" + reviewsUri.toString());
 
         JsonObjectRequest jsonReviewRequest = new JsonObjectRequest(
                 Request.Method.GET,
@@ -407,6 +446,8 @@ public class DetailFragment extends Fragment
                     }
                 }
         );
+        if (mRequestQueue == null)
+            Log.d(TAG, "request queue is null");
 
         mRequestQueue.add(jsonReviewRequest);
     }
@@ -471,21 +512,51 @@ public class DetailFragment extends Fragment
         return mYouTubeKey;
     }
 
-    public void  playTrailer()
+
+    private void updateViews()
     {
-        Snackbar.make(mReviewRecycler, "Play trailer.", Snackbar.LENGTH_LONG)
-            .show();
+        Log.d(TAG, "poster url: " + mMovieValues.get(MovieContract.MovieEntry.COL_BACKDROP_URL));
+        Glide
+                .with(getContext())
+                .load(mMovieValues.get(MovieContract.MovieEntry.COL_BACKDROP_URL))
+                .centerCrop()
+                .into(mBackdrop);
+
+        Glide
+                .with(getContext())
+                .load(mMovieValues.get(MovieContract.MovieEntry.COL_POSTER_URL))
+                .into(mPoster);
+
+        mCollapsingToolbar.setTitle((CharSequence) mMovieValues.get(MovieContract.MovieEntry.COL_ORIGINAL_TITLE));
+        String rating =  mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE).toString();
+        mRatingTextView
+                .setText(rating.toString() + " /10");
+
+        mRatingBar.setRating(Float.parseFloat(rating.toString()) / 10);
+
+        String voteCount = mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_COUNT).toString();
+        mVotesCountTextView.setText("" + voteCount);
+        mOverviewTextView.setText((String) mMovieValues.get(MovieContract.MovieEntry.COL_OVERVIEW));
+
+        mReleaseDateTextView.setText(""+ mMovieValues.get(MovieContract.MovieEntry.COL_RELEASE_DATE));
+        mDurationTextView.setText("Runtime: " + mMovieValues.get(MovieContract.MovieEntry.COL_RUNTIME));
     }
 
-
+    public boolean isNetworkAvailable()
+    {
+        ConnectivityManager cm =
+                (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
     @Override
     public void onStart()
     {
         super.onStart();
         mMovieValues = new ContentValues();
-        FetchMovieDataTask fetchTask = new FetchMovieDataTask();
-        fetchTask.execute();
-        updateReviewsAdapter();
+
+        updateFragment(movieID);
+//        updateReviewsAdapter();
     }
 
     @Override
@@ -515,33 +586,8 @@ public class DetailFragment extends Fragment
             try
             {
                 fillMovieValues(movieJsonStr);
-
-                Glide
-                    .with(getContext())
-                    .load(mMovieValues.get(MovieContract.MovieEntry.COL_BACKDROP_URL))
-                    .into(mBackdrop);
-
-                Glide
-                    .with(getContext())
-                    .load(mMovieValues.get(MovieContract.MovieEntry.COL_POSTER_URL))
-                    .into(mPoster);
-                ViewGroup.LayoutParams params = mPoster.getLayoutParams();
-                Log.d(TAG, "poster width is: " + params.width);
-                Log.d(TAG, "poster height  is: " + params.height);
-
-
-                mCollapsingToolbar.setTitle((CharSequence) mMovieValues.get(MovieContract.MovieEntry.COL_ORIGINAL_TITLE));
-                mRatingTextView
-                        .setText((Double) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE) + "/10");
-
-                String rating = String.valueOf(mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_AVERAGE));
-                mRatingBar.setRating(Float.parseFloat(rating) / 10);
-
-                mVotesCountTextView.setText("" + ((Integer) mMovieValues.get(MovieContract.MovieEntry.COL_VOTE_COUNT)));
-                mOverviewTextView.setText((String) mMovieValues.get(MovieContract.MovieEntry.COL_OVERVIEW));
-
-                mReleaseDateTextView.setText(""+ mMovieValues.get(MovieContract.MovieEntry.COL_RELEASE_DATE));
-                mDurationTextView.setText("Runtime: " + mMovieValues.get(MovieContract.MovieEntry.COL_RUNTIME));
+                ///////////////////
+                updateViews();
             }
             catch (JSONException e)
             {
