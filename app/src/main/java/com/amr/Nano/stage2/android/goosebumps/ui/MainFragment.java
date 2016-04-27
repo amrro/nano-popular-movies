@@ -8,7 +8,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -32,20 +31,18 @@ import com.amr.Nano.stage2.android.goosebumps.R;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.Movie;
 import com.amr.Nano.stage2.android.goosebumps.RecyclerAdapters.MoviesAdapter;
 import com.amr.Nano.stage2.android.goosebumps.database.MovieContract;
+import com.amr.Nano.stage2.android.goosebumps.network.VolleySingleton;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -58,6 +55,7 @@ import butterknife.ButterKnife;
 public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener
 {
     final private int SPAN_COUNT = 2;
+    final private String TAG = MainFragment.class.getSimpleName();
 
     @Bind(R.id.recycler_view)
     RecyclerView mRecyclerView;
@@ -74,7 +72,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
     private RecyclerView.LayoutManager mLayoutManager;
     private MoviesAdapter mMoviesAdapter;
-    private FetchMoviesTask mFetchMoviesTask;
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
 
 
@@ -112,11 +109,6 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         return rootView;
     }
 
-    private boolean isTwoPane()
-    {
-        SharedPreferences prefs = getContext().getSharedPreferences(getString(R.string.prefs_sorting), Context.MODE_PRIVATE);
-        return prefs.getBoolean(DETAILFRAGMENT_TAG, true);
-    }
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
     {
@@ -284,8 +276,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 updateAdapterFromCursor();
             } else
             {
-                mFetchMoviesTask = new FetchMoviesTask();
-                mFetchMoviesTask.execute();
+                fetchMoviesVolley();
             }
         }
     }
@@ -305,147 +296,83 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         return wifiManager.setWifiEnabled(true);
     }
 
-    class FetchMoviesTask extends AsyncTask<Void, Void, ArrayList<Movie>>
+
+    private void fetchMoviesVolley()
     {
+        RequestQueue queue = VolleySingleton.getInstance().getRequestQueue();
+        Uri uriBuilder = Uri.parse(Movie.BASE_URL)
+                .buildUpon()
+                .appendPath("movie")
+                .appendPath(prefs.getString(getString(R.string.prefs_sorting), getString(R.string.prefs_popular)))
+                .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
+                .build();
 
-        private final String TAG = FetchMoviesTask.class.getSimpleName();
-
-        @Override
-        protected ArrayList<Movie> doInBackground(Void... params)
-        {
-            HttpsURLConnection httpsURLConnection = null;
-            BufferedReader reader = null;
-            String moviesJsonStr = null;
-            try
-            {
-                Log.d(TAG, "preference is set to: " +
-                        prefs.getString(getString(R.string.prefs_sorting), getString(R.string.prefs_popular)));
-                Uri uriBuilder = Uri.parse(Movie.BASE_URL)
-                        .buildUpon()
-                        .appendPath("movie")
-                        .appendPath(prefs.getString(getString(R.string.prefs_sorting), getString(R.string.prefs_popular)))
-                        .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
-                        .build();
-
-
-                URL url = new URL(uriBuilder.toString());
-
-                // create request and open connection with TheMoviesDB:
-                httpsURLConnection = (HttpsURLConnection) url.openConnection();
-                httpsURLConnection.setRequestMethod("GET");
-                httpsURLConnection.connect();
-
-
-                // Read input stream::
-                //   >>>
-                InputStream input = httpsURLConnection.getInputStream();
-                if (input == null)
-                    return null;
-
-                reader = new BufferedReader(new InputStreamReader(input));
-
-                StringBuffer buffer = new StringBuffer();
-                String line;
-                while ((line = reader.readLine()) != null)
-                    buffer.append(line + "\n");
-
-                if (buffer.length() == 0)
+        JsonObjectRequest moviesRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                uriBuilder.toString(),
+                null,
+                new Response.Listener<JSONObject>()
                 {
-                    Log.d(TAG, "    empty buffer!");
-                    return null;
-                }
-
-                // finally getting jason string
-                moviesJsonStr = buffer.toString();
-                //  <<<
-            } catch (MalformedURLException e)
-            {
-                Log.e(TAG, "Invalid URL" + e.getMessage());
-            } catch (IOException e)
-            {
-                Log.e(TAG, "error! can't open connection" + e.getMessage());
-            } finally
-            {
-                if (httpsURLConnection != null)
-                    httpsURLConnection.disconnect();
-
-                if (reader != null)
-                    try
+                    @Override
+                    public void onResponse(JSONObject response)
                     {
-                        reader.close();
-                    } catch (IOException e)
-                    {
-                        Log.e(TAG, "error closing BufferedReader! " + e.getMessage());
+                        ArrayList<Movie> moviesList = new ArrayList<>();
+                        JSONArray results = null;
+                        try
+                        {
+                            results = response.getJSONArray("results");
+                            if (results != null)
+                            {
+                                for (int i = 0; i < results.length(); ++i)
+                                {
+                                    JSONObject singleMovie = results.getJSONObject(i);
+                                    moviesList.add(
+                                            new Movie(
+                                                    singleMovie.getInt(Movie.MOVIE_ID),
+                                                    getPosterURL(singleMovie.getString(Movie.POSTER_URL))
+                                            )
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                Log.d(TAG, "results array from JSON is empty!");
+                            }
+
+                            mMoviesAdapter.clear();
+                            mMoviesAdapter.addAll(moviesList);
+                            if (mRefreshMovies.isRefreshing())
+                            {
+                                mRefreshMovies.setRefreshing(false);
+                                Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
+                                        .show();
+                            }
+
+                        }
+                        catch (JSONException e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
-            }
-
-
-            try
-            {
-                return getMoviesFromJson(moviesJsonStr);
-            }
-            catch (JSONException e)
-            {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        private ArrayList<Movie> getMoviesFromJson(String jsonUrl)
-                throws JSONException
-        {
-            ArrayList<Movie> retList = new ArrayList<>();
-
-
-            JSONObject list = new JSONObject(jsonUrl);
-            JSONArray results = list.getJSONArray("results");
-
-            if (results != null)
-            {
-                for (int i = 0; i < results.length(); ++i)
+                },
+                new Response.ErrorListener()
                 {
-                    JSONObject singleMovie = results.getJSONObject(i);
-                    retList.add(
-                            new Movie(
-                                    singleMovie.getInt(Movie.MOVIE_ID),
-                                    getPosterURL(singleMovie.getString(Movie.POSTER_URL))
-                            )
-                    );
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+                        Log.d(TAG, "Failed to catch movies JSONObject" + error.getMessage());
+                    }
                 }
-            }
-            else
-            {
-                Log.d(TAG, "results array from JSON is empty!");
-            }
-            return  retList;
-        }
-
-        private String getPosterURL(String posterPath)
-        {
-            return Uri.parse(Movie.IMAGE_BASE_URL).buildUpon()
-                    .appendPath(Movie.POSTER_SIZES[1])
-                    .appendEncodedPath(posterPath)
-                    .build().toString();
-
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<Movie> movies)
-        {
-            if (movies != null)
-            {
-                Log.d(TAG, String.valueOf(movies.get(0).getID()));
-                Log.d(TAG, movies.get(0).getPosterURL());
-                mMoviesAdapter.clear();
-                mMoviesAdapter.addAll(movies);
-                if (mRefreshMovies.isRefreshing())
-                {
-                    mRefreshMovies.setRefreshing(false);
-                    Toast.makeText(getContext(), "Movies has been updated", Toast.LENGTH_SHORT)
-                            .show();
-                }
-            }
-        }
+        );
+        queue.add(moviesRequest);
     }
 
+    private String getPosterURL(String posterPath)
+    {
+        return Uri.parse(Movie.IMAGE_BASE_URL).buildUpon()
+                .appendPath(Movie.POSTER_SIZES[1])
+                .appendEncodedPath(posterPath)
+                .build().toString();
+
+    }
 }
