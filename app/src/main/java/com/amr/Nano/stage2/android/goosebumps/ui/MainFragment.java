@@ -148,46 +148,43 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         {
             case R.id.popular_item:
             {
-                mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
-
-                editor.putString(
-                        getString(R.string.prefs_sorting),
+               return updateMainFragment(
+                        getString(R.string.menu_popular),
                         getString(R.string.prefs_popular)
                 );
-                editor.apply();
-                chooseAdapter();
-                return true;
-
-
             }
             case R.id.top_rated_item:
             {
-                mCollapsingToolbar.setTitle(getString(R.string.menu_popular));
-                mCollapsingToolbar.setTitle(getString(R.string.menu_top));
-
-                editor.putString(
-                        getString(R.string.prefs_sorting),
+                return updateMainFragment(
+                        getString(R.string.menu_top),
                         getString(R.string.prefs_top_rated)
                 );
-                editor.apply();
-
-                chooseAdapter();
-                return true;
             }
             case R.id.favorites:
             {
-                mCollapsingToolbar.setTitle("Favorites");
-                editor.putString(
-                        getString(R.string.prefs_sorting),
+                return updateMainFragment(
+                        getString(R.string.prefs_favorites),
                         getString(R.string.prefs_favorites)
                 );
-                editor.apply();
-                chooseAdapter();
-                return true;
             }
             default:
+                Log.d("onOptionsItemSelected", "There is no menuItem with this id");
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean  updateMainFragment(String title, String prefSorting)
+    {
+        SharedPreferences.Editor editor = prefs.edit();
+        mCollapsingToolbar.setTitle(title);
+
+        editor.putString(
+                getString(R.string.prefs_sorting),
+                prefSorting
+        );
+        editor.apply();
+        chooseAdapter();
+        return true;
     }
 
 
@@ -257,6 +254,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 getString(R.string.prefs_sorting),
                 getString(R.string.prefs_popular)
         );
+
         if (!isNetworkAvailable())
         {
             updateAdapterFromCursor();
@@ -401,6 +399,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
             JSONObject list = new JSONObject(jsonUrl);
             JSONArray results = list.getJSONArray("results");
+
             if (results != null)
             {
                 for (int i = 0; i < results.length(); ++i)

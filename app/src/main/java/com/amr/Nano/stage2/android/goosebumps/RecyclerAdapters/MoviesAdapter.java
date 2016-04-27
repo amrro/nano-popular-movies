@@ -43,6 +43,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MovieHolde
 
     }
 
+    
+
     @Override
     public MovieHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
