@@ -14,6 +14,9 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -52,8 +55,10 @@ import butterknife.ButterKnife;
  * Created by amro on 4/16/16.
  */
 
-public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener
+public class MainFragment extends Fragment
+        implements SwipeRefreshLayout.OnRefreshListener, LoaderManager.LoaderCallbacks<Cursor>
 {
+    private static final int MOVIES_LOADER_ID = 100;
     final private int SPAN_COUNT = 2;
     final private String TAG = MainFragment.class.getSimpleName();
 
@@ -180,15 +185,15 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
     }
 
 
-    private void updateAdapterFromCursor()
+    private void updateAdapterFromCursor(Cursor cursor)
     {
-        Cursor cursor = getContext().getContentResolver().query(
+        /*Cursor cursor = getContext().getContentResolver().query(
                 MovieContract.MovieEntry.CONTENT_URI,
                 null,
                 null,
                 null,
                 null
-        );
+        );*/
 
         ArrayList<Movie> favoritesList = new ArrayList<>();
         int movieIdIndex = cursor.getColumnIndex(MovieContract.MovieEntry.COL_MOVIE_ID);
@@ -249,7 +254,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
 
         if (!isNetworkAvailable())
         {
-            updateAdapterFromCursor();
+            getLoaderManager().restartLoader(MOVIES_LOADER_ID, null, this);
             mCollapsingToolbar.setTitle("Favorites");
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(
@@ -273,7 +278,7 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
         {
             if (currentSetting.equals(getString(R.string.prefs_favorites)))
             {
-                updateAdapterFromCursor();
+                getLoaderManager().restartLoader(MOVIES_LOADER_ID, null, this);
             } else
             {
                 fetchMoviesVolley();
@@ -374,5 +379,43 @@ public class MainFragment extends Fragment implements SwipeRefreshLayout.OnRefre
                 .appendEncodedPath(posterPath)
                 .build().toString();
 
+    }
+
+
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState)
+    {
+        getLoaderManager().initLoader(MOVIES_LOADER_ID, null, this);
+        super.onActivityCreated(savedInstanceState);
+    }
+
+    /*************************************************
+     *          Loader callbacks                     *
+     *************************************************/
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args)
+    {
+        return new CursorLoader(
+                getActivity(),
+                MovieContract.MovieEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data)
+    {
+        updateAdapterFromCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader)
+    {
+        updateAdapterFromCursor(null);
     }
 }
