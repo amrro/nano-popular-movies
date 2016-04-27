@@ -24,7 +24,8 @@
         </activity>
 
         <activity android:name=".ui.DetailActivity"
-                  android:parentActivityName="com.amr.Nano.stage2.android.goosebumps.ui.DetailActivity" >
+                  android:parentActivityName="com.amr.Nano.stage2.android.goosebumps.ui.DetailActivity"
+                  android:configChanges="screenSize|orientation|screenLayout">
         </activity>
 
         <provider

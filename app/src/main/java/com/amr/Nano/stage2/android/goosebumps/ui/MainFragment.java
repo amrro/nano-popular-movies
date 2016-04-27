@@ -187,14 +187,6 @@ public class MainFragment extends Fragment
 
     private void updateAdapterFromCursor(Cursor cursor)
     {
-        /*Cursor cursor = getContext().getContentResolver().query(
-                MovieContract.MovieEntry.CONTENT_URI,
-                null,
-                null,
-                null,
-                null
-        );*/
-
         ArrayList<Movie> favoritesList = new ArrayList<>();
         int movieIdIndex = cursor.getColumnIndex(MovieContract.MovieEntry.COL_MOVIE_ID);
         int posterIndex = cursor.getColumnIndex(MovieContract.MovieEntry.COL_POSTER_URL);
