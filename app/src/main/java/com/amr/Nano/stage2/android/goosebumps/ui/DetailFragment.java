@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -54,15 +53,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -153,10 +144,8 @@ public class DetailFragment extends Fragment
         ((AppCompatActivity) getActivity()).setSupportActionBar(mToolbar);
         ((AppCompatActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-//        movieID = getActivity().getIntent().getExtras().getInt(Movie.MOVIE_ID);
         movieID = (int) getArguments().get(MovieContract.MovieEntry.COL_MOVIE_ID);
 
-//        movieID = passedData.getInt(MovieContract.MovieEntry.COL_MOVIE_ID);
         Log.d(TAG, "::: Recieved Movie ID is: " + movieID);
 
         mRequestQueue = VolleySingleton.getInstance().getRequestQueue();
@@ -166,14 +155,7 @@ public class DetailFragment extends Fragment
         mReviewRecycler.setLayoutManager(mLayoutManager);
 
         mReviewsAdapter = new ReviewsAdapter(getContext(), new ArrayList<Review>());
-        /*
-        if (isNetworkAvailable())
-            updateReviewsAdapter();
-        else
-        {
-            Snackbar.make(mReviewRecycler, "Couldn't load reviews because you are offline!", Snackbar.LENGTH_LONG);
-        }
-        */
+
         mReviewRecycler.setAdapter(mReviewsAdapter);
 
 
@@ -299,6 +281,7 @@ public class DetailFragment extends Fragment
         {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
             String sorting = prefs.getString(getString(R.string.prefs_sorting),getString(R.string.prefs_popular));
+            assert cursor != null;
             if (cursor.getCount() == 1
                     && cursor.moveToNext() && sorting.equals(getString(R.string.prefs_favorites))
                     && !isNetworkAvailable())
@@ -308,7 +291,8 @@ public class DetailFragment extends Fragment
             }
             else
             {
-                new FetchMovieDataTask().execute();
+//                new FetchMovieDataTask().execute();
+                fetchMovieVolley();
                 updateReviewsAdapter();
             }
         }
@@ -340,6 +324,7 @@ public class DetailFragment extends Fragment
             if (cursor == null)
                 Log.d(TAG, "Cursor is null, check again!!");
 
+            assert cursor != null;
             if (cursor.getCount() > 0)
             {
                 mFavoriteFab.setSelected(true);
@@ -349,6 +334,7 @@ public class DetailFragment extends Fragment
         }
         finally
         {
+            assert cursor != null;
             cursor.close();
         }
     }
@@ -362,8 +348,6 @@ public class DetailFragment extends Fragment
         MenuItem menuItem = menu.findItem(R.id.action_share);
 
         mShareActionProvider = new ShareActionProvider(getContext());
-//                (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
-
         mShareActionProvider.setShareIntent(createShareMovieIntent());
         MenuItemCompat.setActionProvider(menuItem, mShareActionProvider);
         if (mShareActionProvider != null)
@@ -380,7 +364,7 @@ public class DetailFragment extends Fragment
     private Intent createShareMovieIntent()
     {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
-//        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
         shareIntent.putExtra(Intent.EXTRA_TEXT,
                 "check out this movie, \n" + "https://www.youtube.com/watch?v=" + mYouTubeKey);
@@ -486,14 +470,6 @@ public class DetailFragment extends Fragment
                             if (true)
                             {
                                 mYouTubeKey = results.getJSONObject(0).getString("key");
-                                /*
-                                mYouTubeKey = Uri.parse("http://www.youtube.com/watch")
-                                        .buildUpon()
-                                        .appendQueryParameter("v", results.getJSONObject(0).getString("key"))
-                                        .build().toString();
-                                Log.d(TAG, "youtube link is: " + mYouTubeKey);
-                                Log.d(TAG, "youtube key is: " + results.getJSONObject(0).getString("key"));
-                                */
                             }
                         }
                         catch (JSONException e)
@@ -508,7 +484,7 @@ public class DetailFragment extends Fragment
                     @Override
                     public void onErrorResponse(VolleyError error)
                     {
-
+                        Log.d(TAG, "FAILED to get jsonObjet movie" + error.getMessage());
                     }
                 }
         );
@@ -560,9 +536,7 @@ public class DetailFragment extends Fragment
     {
         super.onStart();
         mMovieValues = new ContentValues();
-
         updateFragment(movieID);
-//        updateReviewsAdapter();
     }
 
     @Override
@@ -581,165 +555,121 @@ public class DetailFragment extends Fragment
         );
     }
 
-    class FetchMovieDataTask extends AsyncTask<Void, Void, String>
+
+    private void fetchMovieVolley()
     {
+        Uri uriBuilder = Uri.parse(Movie.BASE_URL)
+                .buildUpon()
+                .appendPath("movie")
+                .appendPath(String.valueOf(movieID))
+                .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
+                .build();
 
-        @Override
-        protected void onPostExecute(String movieJsonStr)
-        {
-            super.onPostExecute(movieJsonStr);
-
-            try
-            {
-                fillMovieValues(movieJsonStr);
-                ///////////////////
-                updateViews();
-            }
-            catch (JSONException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-
-        @Override
-        protected String doInBackground(Void... params)
-        {
-            HttpsURLConnection httpsURLConnection = null;
-            BufferedReader reader = null;
-            String movieJsonStr = null;
-            try
-            {
-                Uri uriBuilder = Uri.parse(Movie.BASE_URL)
-                        .buildUpon()
-                        .appendPath("movie")
-                        .appendPath(String.valueOf(movieID))
-                        .appendQueryParameter(Movie.API_kEY_QUERY, Movie.API_KEY)
-                        .build();
-
-
-                URL url = new URL(uriBuilder.toString());
-
-                httpsURLConnection = (HttpsURLConnection) url.openConnection();
-                httpsURLConnection.setRequestMethod("GET");
-                httpsURLConnection.connect();
-
-
-                // parsing input stream:
-                InputStream input = httpsURLConnection.getInputStream();
-                if (input == null)
+        JsonObjectRequest movieRequest = new JsonObjectRequest(
+                Request.Method.GET,
+                uriBuilder.toString(),
+                null,
+                new Response.Listener<JSONObject>()
                 {
-                    Log.d(TAG, "null InputStream.");
-                    return null;
-                }
-
-
-                reader = new BufferedReader(new InputStreamReader(input));
-
-                StringBuffer buffer = new StringBuffer();
-                String line;
-                while ((line = reader.readLine()) != null)
-                    buffer.append(line + "\n");
-
-                if (buffer.length() == 0)
+                    @Override
+                    public void onResponse(JSONObject response)
+                    {
+                        try
+                        {
+                            fillMovieValues(response);
+                            updateViews();
+                        }
+                        catch (JSONException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener()
                 {
-                    Log.d(TAG, "    empty buffer!");
-                    return null;
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+
+                    }
                 }
+        );
+        mRequestQueue.add(movieRequest);
+    }
 
-                movieJsonStr = buffer.toString();
-                return  movieJsonStr;
+    private void fillMovieValues(JSONObject movieData) throws JSONException
+    {
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_POSTER_URL,
+                getPosterURL(movieData.getString(MovieContract.MovieEntry.COL_POSTER_URL)
+                )
+        );
 
-            }
-            catch (MalformedURLException e)
-            {
-                Log.d(TAG, ":: ERROR in Building url.");
-                e.printStackTrace();
-            }
-            catch (IOException e)
-            {
-                Log.d(TAG, "url.openConnection() has failed");
-                e.printStackTrace();
-            }
+        mMovieValues.put(MovieContract.MovieEntry.COL_IS_ADULT,
+                movieData.getString(MovieContract.MovieEntry.COL_IS_ADULT)
+        );
 
-            return null;
-        }
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_OVERVIEW,
+                movieData.getString(MovieContract.MovieEntry.COL_OVERVIEW)
+        );
 
-        private String getPosterURL(String posterPath)
-        {
-            return Uri.parse(Movie.IMAGE_BASE_URL).buildUpon()
-                    .appendPath(Movie.POSTER_SIZES[1])
-                    .appendEncodedPath(posterPath)
-                    .build().toString();
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_RELEASE_DATE,
+                movieData.getString(MovieContract.MovieEntry.COL_RELEASE_DATE)
+        );
 
-        }
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_MOVIE_ID,
+                movieData.getString(MovieContract.MovieEntry.COL_MOVIE_ID)
+        );
 
-        private String getBackdropURL(String backdropPath)
-        {
-            return Uri.parse(Movie.IMAGE_BASE_URL)
-                    .buildUpon()
-                    .appendPath(Movie.BACKDROP_SIZES[0])
-                    .appendEncodedPath(backdropPath)
-                    .build().toString();
-        }
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_ORIGINAL_TITLE,
+                movieData.getString(MovieContract.MovieEntry.COL_ORIGINAL_TITLE)
+        );
 
-        private void fillMovieValues(String movieJsonStr) throws JSONException
-        {
-            JSONObject movieData = new JSONObject(movieJsonStr);
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_POSTER_URL,
-                    getPosterURL(movieData.getString(MovieContract.MovieEntry.COL_POSTER_URL)
-                    )
-            );
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_BACKDROP_URL,
+                getBackdropURL(movieData.getString(MovieContract.MovieEntry.COL_BACKDROP_URL))
+        );
 
-            mMovieValues.put(MovieContract.MovieEntry.COL_IS_ADULT,
-                    movieData.getString(MovieContract.MovieEntry.COL_IS_ADULT)
-            );
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_POPULARITY,
+                movieData.getDouble(MovieContract.MovieEntry.COL_POPULARITY)
+        );
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_OVERVIEW,
-                    movieData.getString(MovieContract.MovieEntry.COL_OVERVIEW)
-            );
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_VOTE_COUNT,
+                movieData.getInt(MovieContract.MovieEntry.COL_VOTE_COUNT)
+        );
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_RELEASE_DATE,
-                    movieData.getString(MovieContract.MovieEntry.COL_RELEASE_DATE)
-            );
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_VOTE_AVERAGE,
+                movieData.getDouble(MovieContract.MovieEntry.COL_VOTE_AVERAGE)
+        );
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_MOVIE_ID,
-                    movieData.getString(MovieContract.MovieEntry.COL_MOVIE_ID)
-            );
+        mMovieValues.put(
+                MovieContract.MovieEntry.COL_RUNTIME,
+                movieData.getInt(MovieContract.MovieEntry.COL_RUNTIME)
+        );
+    }
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_ORIGINAL_TITLE,
-                    movieData.getString(MovieContract.MovieEntry.COL_ORIGINAL_TITLE)
-            );
+    private String getPosterURL(String posterPath)
+    {
+        return Uri.parse(Movie.IMAGE_BASE_URL).buildUpon()
+                .appendPath(Movie.POSTER_SIZES[1])
+                .appendEncodedPath(posterPath)
+                .build().toString();
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_BACKDROP_URL,
-                    getBackdropURL(movieData.getString(MovieContract.MovieEntry.COL_BACKDROP_URL))
-            );
+    }
 
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_POPULARITY,
-                    movieData.getDouble(MovieContract.MovieEntry.COL_POPULARITY)
-            );
-
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_VOTE_COUNT,
-                    movieData.getInt(MovieContract.MovieEntry.COL_VOTE_COUNT)
-            );
-
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_VOTE_AVERAGE,
-                    movieData.getDouble(MovieContract.MovieEntry.COL_VOTE_AVERAGE)
-            );
-
-            mMovieValues.put(
-                    MovieContract.MovieEntry.COL_RUNTIME,
-                    movieData.getInt(MovieContract.MovieEntry.COL_RUNTIME)
-            );
-        }
+    private String getBackdropURL(String backdropPath)
+    {
+        return Uri.parse(Movie.IMAGE_BASE_URL)
+                .buildUpon()
+                .appendPath(Movie.BACKDROP_SIZES[0])
+                .appendEncodedPath(backdropPath)
+                .build().toString();
     }
 }
