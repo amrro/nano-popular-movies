@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
@@ -79,7 +80,8 @@ public class MainFragment extends Fragment
     private MoviesAdapter mMoviesAdapter;
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
 
-
+    private final String RECYCLER_STATE_KEY = "RECYCLER_STATE";
+    private Parcelable mRecyclerState;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState)
@@ -110,6 +112,8 @@ public class MainFragment extends Fragment
 
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setAdapter(mMoviesAdapter);
+        if (savedInstanceState != null)
+            mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(RECYCLER_STATE_KEY));
 
         return rootView;
     }
@@ -208,14 +212,9 @@ public class MainFragment extends Fragment
             cursor.close();
         }
 
-        if (favoritesList.size() == 0)
-            Snackbar.make(
-                    mRecyclerView, "Seems you haven't favored any movies yet",
-                    Snackbar.LENGTH_LONG)
-                    .show();
-
         mMoviesAdapter.clear();
         mMoviesAdapter.addAll(favoritesList);
+        mLayoutManager.onRestoreInstanceState(mRecyclerState);
         if (mRefreshMovies.isRefreshing())
         {
             mRefreshMovies.setRefreshing(false);
@@ -338,6 +337,8 @@ public class MainFragment extends Fragment
 
                             mMoviesAdapter.clear();
                             mMoviesAdapter.addAll(moviesList);
+                            mLayoutManager.onRestoreInstanceState(mRecyclerState);
+
                             if (mRefreshMovies.isRefreshing())
                             {
                                 mRefreshMovies.setRefreshing(false);
@@ -373,12 +374,19 @@ public class MainFragment extends Fragment
 
     }
 
-
+    @Override
+    public void onSaveInstanceState(Bundle outState)
+    {
+        outState.putParcelable(RECYCLER_STATE_KEY, mLayoutManager.onSaveInstanceState());
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState)
     {
         getLoaderManager().initLoader(MOVIES_LOADER_ID, null, this);
+        if (savedInstanceState != null)
+            mLayoutManager.onRestoreInstanceState(savedInstanceState.getParcelable(RECYCLER_STATE_KEY));
         super.onActivityCreated(savedInstanceState);
     }
 
